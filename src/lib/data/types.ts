@@ -44,17 +44,17 @@ export interface WeekStats {
 }
 
 export const ROLE_COLORS: Record<EmployeeRole, string> = {
-  manager: '#1a3a5c',
-  server: '#4a3060',
-  cashier: '#2d5a27',
-  cook: '#5a2d27',
-  host: '#4a4020',
-  barista: '#2d4a5a',
+  manager: '#2a4f72',
+  server: '#5a3e6b',
+  cashier: '#3a6a35',
+  cook: '#6a3a30',
+  host: '#5a5028',
+  barista: '#2f5866',
 };
 
 export const EMPLOYEE_COLORS = [
-  '#1a3a5c', '#4a3060', '#2d5a27', '#5a2d27',
-  '#4a4020', '#1a4a4a', '#5a4a1a', '#2d4a5a',
+  '#2a4f72', '#5a3e6b', '#3a6a35', '#6a3a30',
+  '#5a5028', '#2f5866', '#6a5028', '#3a4f72',
 ];
 
 export const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'] as const;

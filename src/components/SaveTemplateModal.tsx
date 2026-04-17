@@ -22,7 +22,7 @@ export default function SaveTemplateModal({ isOpen, onClose, onToast }: SaveTemp
     const trimmed = name.trim();
     if (!trimmed) return;
     if (shifts.length === 0) {
-      alert('No shifts to save as template.');
+      onToast('No shifts to save as template');
       return;
     }
     await saveTemplate(trimmed);
@@ -38,26 +38,29 @@ export default function SaveTemplateModal({ isOpen, onClose, onToast }: SaveTemp
       width="max-w-sm"
       footer={
         <>
-          <button onClick={onClose} className="text-[13px] font-medium px-3.5 py-[7px] rounded-md bg-transparent text-[var(--color-text)] border border-[var(--color-border)] hover:bg-[var(--color-bg)] transition-all">
+          <button onClick={onClose} className="text-[13px] font-medium px-4 py-2 rounded-lg bg-white text-[var(--color-text-2)] border border-[var(--color-border-strong)] hover:bg-[var(--color-bg)] transition-all">
             Cancel
           </button>
-          <button onClick={handleSave} className="text-[13px] font-medium px-3.5 py-[7px] rounded-md bg-[var(--color-accent)] text-white border border-[var(--color-accent)] hover:bg-[#b03f25] transition-all">
+          <button onClick={handleSave} className="text-[13px] font-medium px-4 py-2 rounded-lg bg-[var(--color-accent)] text-white border border-[var(--color-accent)] hover:bg-[var(--color-accent-hover)] transition-all shadow-sm">
             Save Template
           </button>
         </>
       }
     >
       <div>
-        <label className="block text-[10px] font-semibold uppercase tracking-wider text-[var(--color-muted)] mb-1 font-mono">Template Name</label>
+        <label className="block text-[10px] font-semibold uppercase tracking-wider text-[var(--color-muted)] mb-1.5 font-mono">Template Name</label>
         <input
           type="text"
-          className="w-full border border-[var(--color-border)] rounded px-2.5 py-[7px] text-[13px] bg-[var(--color-surface)] text-[var(--color-text)] focus:border-[var(--color-accent)] outline-none"
-          placeholder="Standard Week"
+          className="w-full border border-[var(--color-border-strong)] rounded-md px-3 py-2 text-[13px] bg-white text-[var(--color-text)] focus:border-[var(--color-accent)] outline-none transition-colors"
+          placeholder="e.g. Standard Week, Holiday Schedule"
           value={name}
           onChange={(e) => setName(e.target.value)}
           onKeyDown={(e) => { if (e.key === 'Enter') handleSave(); }}
           autoFocus
         />
+        <div className="mt-2.5 text-[12px] text-[var(--color-muted)]">
+          Saves the current week&apos;s {shifts.length} shift{shifts.length !== 1 ? 's' : ''} as a reusable template.
+        </div>
       </div>
     </Modal>
   );

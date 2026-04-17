@@ -23,7 +23,7 @@ export default function ApplyTemplateModal({ isOpen, onClose, onToast }: ApplyTe
   const handleApply = async () => {
     if (!selectedId) return;
     const result = await applyTemplate(selectedId);
-    onToast(`Applied: ${result.added} shifts added, ${result.skipped} skipped`);
+    onToast(`${result.added} shifts added · ${result.skipped} skipped`);
     onClose();
   };
 
@@ -37,29 +37,34 @@ export default function ApplyTemplateModal({ isOpen, onClose, onToast }: ApplyTe
       width="max-w-sm"
       footer={
         <>
-          <button onClick={onClose} className="text-[13px] font-medium px-3.5 py-[7px] rounded-md bg-transparent text-[var(--color-text)] border border-[var(--color-border)] hover:bg-[var(--color-bg)] transition-all">
+          <button onClick={onClose} className="text-[13px] font-medium px-4 py-2 rounded-lg bg-white text-[var(--color-text-2)] border border-[var(--color-border-strong)] hover:bg-[var(--color-bg)] transition-all">
             Cancel
           </button>
           <button
             onClick={handleApply}
             disabled={templates.length === 0}
-            className="text-[13px] font-medium px-3.5 py-[7px] rounded-md bg-[var(--color-accent)] text-white border border-[var(--color-accent)] hover:bg-[#b03f25] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            className="text-[13px] font-medium px-4 py-2 rounded-lg bg-[var(--color-accent)] text-white border border-[var(--color-accent)] hover:bg-[var(--color-accent-hover)] transition-all disabled:opacity-40 disabled:cursor-not-allowed shadow-sm"
           >
-            Apply
+            Apply to This Week
           </button>
         </>
       }
     >
       {templates.length === 0 ? (
-        <div className="text-[var(--color-muted)] text-xs font-mono text-center py-4">
-          No templates saved yet. Save a template first.
+        <div className="text-center py-6">
+          <div className="text-[var(--color-muted)] text-[13px]">
+            No templates saved yet.
+          </div>
+          <div className="text-[12px] text-[var(--color-muted)] mt-1">
+            Build a week and click &ldquo;Save Template&rdquo; to reuse it.
+          </div>
         </div>
       ) : (
         <>
           <div>
-            <label className="block text-[10px] font-semibold uppercase tracking-wider text-[var(--color-muted)] mb-1 font-mono">Template</label>
+            <label className="block text-[10px] font-semibold uppercase tracking-wider text-[var(--color-muted)] mb-1.5 font-mono">Template</label>
             <select
-              className="w-full border border-[var(--color-border)] rounded px-2.5 py-[7px] text-[13px] bg-[var(--color-surface)] text-[var(--color-text)] focus:border-[var(--color-accent)] outline-none"
+              className="w-full border border-[var(--color-border-strong)] rounded-md px-3 py-2 text-[13px] bg-white text-[var(--color-text)] focus:border-[var(--color-accent)] outline-none transition-colors"
               value={selectedId}
               onChange={(e) => setSelectedId(e.target.value)}
             >
@@ -69,8 +74,8 @@ export default function ApplyTemplateModal({ isOpen, onClose, onToast }: ApplyTe
             </select>
           </div>
           {selected && (
-            <div className="mt-2.5 text-xs text-[var(--color-muted)]">
-              This will add {selected.items.length} shift{selected.items.length !== 1 ? 's' : ''} to the current week. Existing shifts won&apos;t be removed. Duplicates will be skipped.
+            <div className="mt-3 p-3 bg-[var(--color-surface-2)] rounded-md text-[12px] text-[var(--color-text-2)] leading-relaxed">
+              Adds {selected.items.length} shift{selected.items.length !== 1 ? 's' : ''} to this week. Existing shifts are kept; duplicates are skipped.
             </div>
           )}
         </>

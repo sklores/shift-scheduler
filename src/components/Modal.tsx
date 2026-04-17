@@ -24,22 +24,34 @@ export default function Modal({ isOpen, onClose, title, headerClassName, footer,
     return () => document.removeEventListener('keydown', handleEsc);
   }, [isOpen, onClose]);
 
+  useEffect(() => {
+    if (!isOpen) return;
+    document.body.style.overflow = 'hidden';
+    return () => { document.body.style.overflow = ''; };
+  }, [isOpen]);
+
   if (!isOpen) return null;
 
   return (
     <div
       ref={overlayRef}
-      className="fixed inset-0 z-[400] flex items-center justify-center bg-black/45 animate-[fadeIn_0.15s_ease]"
+      className="fixed inset-0 z-[400] flex items-end sm:items-center justify-center bg-black/50 animate-[fadeIn_0.15s_ease] p-0 sm:p-4"
       onClick={(e) => { if (e.target === overlayRef.current) onClose(); }}
     >
-      <div className={`bg-[var(--color-surface)] rounded-lg shadow-xl overflow-hidden w-full ${width} mx-4`}>
-        <div className={`px-5 py-4 flex items-center justify-between ${headerClassName ?? 'bg-[#1a1916] text-white'}`}>
-          <h2 className="font-mono text-sm font-semibold">{title}</h2>
-          <button onClick={onClose} className="text-white/60 hover:text-white text-lg leading-none">&times;</button>
+      <div className={`bg-white rounded-t-2xl sm:rounded-xl shadow-2xl overflow-hidden w-full ${width} animate-[scaleIn_0.2s_ease] max-h-[90vh] flex flex-col`}>
+        <div className={`px-5 py-4 flex items-center justify-between flex-shrink-0 ${headerClassName ?? 'bg-[var(--color-text)] text-white'}`}>
+          <h2 className="font-semibold text-[15px]">{title}</h2>
+          <button
+            onClick={onClose}
+            className="text-white/60 hover:text-white text-2xl leading-none w-8 h-8 flex items-center justify-center rounded-md hover:bg-white/10 transition-colors"
+            aria-label="Close"
+          >
+            &times;
+          </button>
         </div>
-        <div className="p-5">{children}</div>
+        <div className="p-5 overflow-y-auto flex-1">{children}</div>
         {footer && (
-          <div className="px-5 py-3.5 border-t border-[var(--color-border)] flex gap-2 justify-end">
+          <div className="px-5 py-4 border-t border-[var(--color-border)] bg-[var(--color-surface-2)] flex gap-2.5 justify-end flex-shrink-0">
             {footer}
           </div>
         )}

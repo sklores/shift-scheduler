@@ -3,6 +3,7 @@
 import { useState, useCallback } from 'react';
 import { useSchedulerContext } from '@/context/SchedulerContext';
 import { useToast } from '@/lib/hooks/useToast';
+import { useConfirm } from '@/lib/hooks/useConfirm';
 import Header from './Header';
 import Toolbar from './Toolbar';
 import ScheduleGrid from './ScheduleGrid';
@@ -12,21 +13,20 @@ import PublishModal from './PublishModal';
 import SaveTemplateModal from './SaveTemplateModal';
 import ApplyTemplateModal from './ApplyTemplateModal';
 import Toast from './Toast';
+import ConfirmDialog from './ConfirmDialog';
 
 export default function Scheduler() {
   const { isLoading, clearWeek, shifts, deleteShift } = useSchedulerContext();
   const toast = useToast();
+  const confirm = useConfirm();
 
-  // Drawer
   const [isDrawerOpen, setDrawerOpen] = useState(false);
 
-  // Shift modal
   const [isShiftModalOpen, setShiftModalOpen] = useState(false);
   const [editShiftId, setEditShiftId] = useState<string | null>(null);
   const [prefillEmpId, setPrefillEmpId] = useState<string | null>(null);
   const [prefillDay, setPrefillDay] = useState<number | null>(null);
 
-  // Other modals
   const [isPublishOpen, setPublishOpen] = useState(false);
   const [isSaveTemplateOpen, setSaveTemplateOpen] = useState(false);
   const [isApplyTemplateOpen, setApplyTemplateOpen] = useState(false);
@@ -46,23 +46,40 @@ export default function Scheduler() {
   }, []);
 
   const handleDeleteShift = useCallback(async (shiftId: string) => {
+    const ok = await confirm.ask({
+      title: 'Delete this shift?',
+      message: 'This cannot be undone.',
+      confirmLabel: 'Delete',
+      destructive: true,
+    });
+    if (!ok) return;
     await deleteShift(shiftId);
     toast.show('Shift deleted');
-  }, [deleteShift, toast]);
+  }, [deleteShift, toast, confirm]);
 
   const handleClearWeek = useCallback(async () => {
-    if (!shifts.length || !confirm('Clear all shifts for this week?')) return;
+    if (!shifts.length) {
+      toast.show('No shifts to clear');
+      return;
+    }
+    const ok = await confirm.ask({
+      title: 'Clear all shifts?',
+      message: `This will remove all ${shifts.length} shifts from this week. You'll need to rebuild the schedule.`,
+      confirmLabel: 'Clear Week',
+      destructive: true,
+    });
+    if (!ok) return;
     await clearWeek();
     toast.show('Week cleared');
-  }, [shifts.length, clearWeek, toast]);
+  }, [shifts.length, clearWeek, toast, confirm]);
 
   const handlePublish = useCallback(() => {
     if (!shifts.length) {
-      alert('No shifts scheduled yet.');
+      toast.show('No shifts scheduled yet');
       return;
     }
     setPublishOpen(true);
-  }, [shifts.length]);
+  }, [shifts.length, toast]);
 
   if (isLoading) {
     return (
@@ -96,6 +113,7 @@ export default function Scheduler() {
         isOpen={isDrawerOpen}
         onClose={() => setDrawerOpen(false)}
         onToast={toast.show}
+        onConfirm={confirm.ask}
       />
       <ShiftModal
         isOpen={isShiftModalOpen}
@@ -121,6 +139,12 @@ export default function Scheduler() {
         onToast={toast.show}
       />
 
+      <ConfirmDialog
+        isOpen={confirm.isOpen}
+        options={confirm.options}
+        onConfirm={confirm.handleConfirm}
+        onCancel={confirm.handleCancel}
+      />
       <Toast message={toast.message} />
     </>
   );

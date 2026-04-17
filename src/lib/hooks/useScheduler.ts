@@ -70,6 +70,14 @@ export function useScheduler(adapter: DataAdapter) {
     setShifts(prev => prev.filter(s => s.id !== id));
   }, [adapter]);
 
+  const moveShift = useCallback(async (id: string, newEmployeeId: string, newDay: number) => {
+    const shift = shifts.find(s => s.id === id);
+    if (!shift) return;
+    if (shift.employeeId === newEmployeeId && shift.day === newDay) return;
+    const updated = await adapter.updateShift(id, { employeeId: newEmployeeId, day: newDay });
+    setShifts(prev => prev.map(s => s.id === id ? updated : s));
+  }, [adapter, shifts]);
+
   const clearWeek = useCallback(async () => {
     await adapter.clearAllShifts();
     setShifts([]);
@@ -174,6 +182,7 @@ export function useScheduler(adapter: DataAdapter) {
     addShift,
     updateShift,
     deleteShift,
+    moveShift,
     clearWeek,
 
     // Template actions

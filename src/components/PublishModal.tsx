@@ -42,7 +42,7 @@ export default function PublishModal({ isOpen, onClose, onToast }: PublishModalP
 
   const handleSend = async () => {
     setPhase('sending');
-    // Stubbed: simulate sending with 1s delay
+    // Stubbed — simulate sending
     await new Promise(resolve => setTimeout(resolve, 1000));
     const mockResults: SendResult[] = recipients.map(r => ({
       name: r.emp.name,
@@ -51,35 +51,51 @@ export default function PublishModal({ isOpen, onClose, onToast }: PublishModalP
     }));
     setResults(mockResults);
     setPhase('results');
-    const sentCount = mockResults.filter(r => r.status === 'sent').length;
-    onToast(`Sent ${sentCount} / Failed 0`);
+    onToast(`Sent ${mockResults.length} schedule${mockResults.length !== 1 ? 's' : ''}`);
   };
+
+  const headerCls = "bg-[var(--color-green)] text-white";
 
   if (phase === 'results') {
     const sentCount = results.filter(r => r.status === 'sent').length;
     const failedCount = results.length - sentCount;
 
     return (
-      <Modal isOpen={isOpen} onClose={handleClose} title={failedCount === 0 ? '&#10003; Schedule Sent!' : 'Send Results'} headerClassName="bg-[var(--color-green)] text-white" width="max-w-lg"
+      <Modal
+        isOpen={isOpen}
+        onClose={handleClose}
+        title={failedCount === 0 ? 'Schedule Sent' : 'Send Results'}
+        headerClassName={headerCls}
+        width="max-w-md"
         footer={
-          <button onClick={handleClose} className="text-[13px] font-medium px-3.5 py-[7px] rounded-md bg-transparent text-[var(--color-text)] border border-[var(--color-border)] hover:bg-[var(--color-bg)] transition-all">
-            Close
+          <button onClick={handleClose} className="text-[13px] font-medium px-4 py-2 rounded-lg bg-[var(--color-text)] text-white hover:opacity-90 transition-all">
+            Done
           </button>
         }
       >
-        <div className="font-mono text-[10px] uppercase tracking-widest text-[var(--color-muted)] mb-2.5">
-          Sent {sentCount} / Failed {failedCount}
+        <div className="text-center mb-4">
+          <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-[var(--color-green-light)] mb-3">
+            <svg width="28" height="28" viewBox="0 0 28 28" fill="none" className="text-[var(--color-green)]">
+              <path d="M7 14L12 19L21 9" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          </div>
+          <div className="text-lg font-semibold text-[var(--color-text)]">
+            {sentCount} schedule{sentCount !== 1 ? 's' : ''} delivered
+          </div>
+          {failedCount > 0 && (
+            <div className="text-[13px] text-[var(--color-accent)] mt-1">{failedCount} failed</div>
+          )}
         </div>
-        <div className="space-y-0">
+        <div className="space-y-1">
           {results.map((r, i) => (
-            <div key={i} className="flex items-center gap-2.5 py-2 border-b border-[var(--color-border)] last:border-b-0">
-              <div className="flex-1 text-[13px] font-medium">{r.name}</div>
-              <div className="font-mono text-[11px] text-[var(--color-muted)]">{r.to}</div>
-              <span className={`text-[10px] font-mono px-2 py-0.5 rounded-full font-semibold ${
-                r.status === 'sent' ? 'bg-[var(--color-green-light)] text-[var(--color-green)]' : 'bg-[var(--color-accent-light)] text-[var(--color-accent)]'
-              }`}>
-                {r.status === 'sent' ? '&#10003; sent' : '&#10007; failed'}
-              </span>
+            <div key={i} className="flex items-center gap-3 py-2.5 px-3 rounded-lg bg-[var(--color-surface-2)]">
+              <div className="flex-1 min-w-0">
+                <div className="text-[13px] font-medium truncate">{r.name}</div>
+                <div className="font-mono text-[11px] text-[var(--color-muted)]">{r.to}</div>
+              </div>
+              <Badge variant={r.status === 'sent' ? 'success' : 'danger'}>
+                {r.status === 'sent' ? '✓ sent' : '✗ failed'}
+              </Badge>
             </div>
           ))}
         </div>
@@ -92,23 +108,23 @@ export default function PublishModal({ isOpen, onClose, onToast }: PublishModalP
       isOpen={isOpen}
       onClose={handleClose}
       title="Publish Schedule"
-      headerClassName="bg-[var(--color-green)] text-white"
-      width="max-w-lg"
+      headerClassName={headerCls}
+      width="max-w-md"
       footer={
         phase === 'sending' ? (
-          <div className="flex items-center gap-2 text-[var(--color-muted)] text-xs font-mono">
-            <span className="inline-block w-3.5 h-3.5 border-2 border-white/40 border-t-[var(--color-green)] rounded-full animate-spin" />
+          <div className="flex items-center gap-2 text-[var(--color-muted)] text-[13px] font-medium">
+            <span className="inline-block w-4 h-4 border-2 border-[var(--color-border-strong)] border-t-[var(--color-green)] rounded-full animate-spin" />
             Sending...
           </div>
         ) : (
           <>
-            <button onClick={handleClose} className="text-[13px] font-medium px-3.5 py-[7px] rounded-md bg-transparent text-[var(--color-text)] border border-[var(--color-border)] hover:bg-[var(--color-bg)] transition-all">
+            <button onClick={handleClose} className="text-[13px] font-medium px-4 py-2 rounded-lg bg-white text-[var(--color-text-2)] border border-[var(--color-border-strong)] hover:bg-[var(--color-bg)] transition-all">
               Cancel
             </button>
             <button
               onClick={handleSend}
               disabled={recipients.length === 0}
-              className="text-[13px] font-medium px-3.5 py-[7px] rounded-md bg-[var(--color-green)] text-white border border-[var(--color-green)] hover:bg-[#224a1e] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              className="text-[13px] font-medium px-4 py-2 rounded-lg bg-[var(--color-green)] text-white border border-[var(--color-green)] hover:bg-[var(--color-green-hover)] transition-all disabled:opacity-40 disabled:cursor-not-allowed shadow-sm"
             >
               Send {recipients.length} Text{recipients.length !== 1 ? 's' : ''}
             </button>
@@ -117,51 +133,68 @@ export default function PublishModal({ isOpen, onClose, onToast }: PublishModalP
       }
     >
       {(missingPhone.length > 0 || invalidPhone.length > 0) && (
-        <div className="mb-4 px-3.5 py-2.5 bg-[#fff3e0] border border-[#f5c97a] rounded text-xs text-[#7a4a00]">
-          &#9888; {[
-            missingPhone.length > 0 ? `${missingPhone.length} missing phone` : '',
-            invalidPhone.length > 0 ? `${invalidPhone.length} invalid phone format` : '',
-          ].filter(Boolean).join(' · ')} — these employees will be skipped.
+        <div className="mb-4 px-3.5 py-2.5 bg-[var(--color-warn-light)] border border-[#f3d097] rounded-lg text-[12.5px] text-[var(--color-warn)] flex items-start gap-2">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" className="flex-shrink-0 mt-0.5"><path d="M7 1L13 12H1L7 1Z" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round"/><path d="M7 5V8" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/><circle cx="7" cy="10" r="0.6" fill="currentColor"/></svg>
+          <div>
+            {[
+              missingPhone.length > 0 ? `${missingPhone.length} missing phone` : '',
+              invalidPhone.length > 0 ? `${invalidPhone.length} invalid phone format` : '',
+            ].filter(Boolean).join(' · ')} — these employees will be skipped.
+          </div>
         </div>
       )}
 
       {/* Sample message */}
-      <div className="mb-4">
-        <div className="font-mono text-[10px] uppercase tracking-widest text-[var(--color-muted)] mb-2">Sample message preview</div>
-        <div className="font-mono text-xs bg-[var(--color-surface)] border border-[var(--color-border)] rounded px-3 py-2.5 text-[var(--color-text)] leading-relaxed whitespace-pre-wrap max-h-[120px] overflow-y-auto">
+      <div className="mb-5">
+        <div className="font-mono text-[10px] uppercase tracking-[0.12em] text-[var(--color-muted)] mb-2">Sample message</div>
+        <div className="font-mono text-[12px] bg-[var(--color-surface-2)] border border-[var(--color-border)] rounded-lg px-3.5 py-3 text-[var(--color-text)] leading-relaxed whitespace-pre-wrap max-h-[140px] overflow-y-auto">
           {sampleMsg || '—'}
         </div>
       </div>
 
       {/* Recipients */}
       <div>
-        <div className="font-mono text-[10px] uppercase tracking-widest text-[var(--color-muted)] mb-2.5">
-          Recipients ({scheduledEmps.length} scheduled this week)
+        <div className="font-mono text-[10px] uppercase tracking-[0.12em] text-[var(--color-muted)] mb-2.5">
+          Recipients — {scheduledEmps.length} scheduled
         </div>
-        {scheduledEmps.map(emp => {
-          const formatted = cleanPhone(emp.phone || '');
-          const ok = !!formatted;
-          const status = !emp.phone || !emp.phone.trim() ? 'no phone' : ok ? 'will receive SMS' : 'invalid phone';
+        <div className="space-y-1">
+          {scheduledEmps.map(emp => {
+            const formatted = cleanPhone(emp.phone || '');
+            const ok = !!formatted;
 
-          return (
-            <div key={emp.id} className="flex items-center gap-2.5 py-2 border-b border-[var(--color-border)] last:border-b-0">
-              <div
-                className="w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-semibold text-white flex-shrink-0"
-                style={{ backgroundColor: emp.color }}
-              >
-                {initials(emp.name)}
+            return (
+              <div key={emp.id} className="flex items-center gap-3 py-2 px-2.5 rounded-lg hover:bg-[var(--color-surface-2)] transition-colors">
+                <div
+                  className="w-8 h-8 rounded-full flex items-center justify-center text-[11px] font-semibold text-white flex-shrink-0"
+                  style={{ backgroundColor: emp.color }}
+                >
+                  {initials(emp.name)}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="text-[13px] font-medium truncate">{emp.name}</div>
+                  <div className="font-mono text-[11px] text-[var(--color-muted)]">{emp.phone || 'no phone'}</div>
+                </div>
+                <Badge variant={ok ? 'success' : 'warn'}>
+                  {!emp.phone || !emp.phone.trim() ? 'no phone' : ok ? '✓ ready' : 'invalid'}
+                </Badge>
               </div>
-              <div className="flex-1 text-[13px] font-medium">{emp.name}</div>
-              <div className="font-mono text-xs text-[var(--color-muted)]">{emp.phone || '—'}</div>
-              <span className={`text-[10px] font-mono px-2 py-0.5 rounded-full font-semibold ${
-                ok ? 'bg-[var(--color-green-light)] text-[var(--color-green)]' : 'bg-[#fff3e0] text-[#b45a00]'
-              }`}>
-                {status}
-              </span>
-            </div>
-          );
-        })}
+            );
+          })}
+        </div>
       </div>
     </Modal>
+  );
+}
+
+function Badge({ children, variant }: { children: React.ReactNode; variant: 'success' | 'warn' | 'danger' }) {
+  const cls = {
+    success: 'bg-[var(--color-green-light)] text-[var(--color-green)]',
+    warn: 'bg-[var(--color-warn-light)] text-[var(--color-warn)]',
+    danger: 'bg-[var(--color-accent-light)] text-[var(--color-accent)]',
+  }[variant];
+  return (
+    <span className={`text-[10.5px] font-mono px-2 py-0.5 rounded-full font-semibold uppercase tracking-wide ${cls}`}>
+      {children}
+    </span>
   );
 }

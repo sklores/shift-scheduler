@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useSchedulerContext } from '@/context/SchedulerContext';
 import { DAY_FULL } from '@/lib/data/types';
-import { generateTimeOptions } from '@/lib/utils/time';
+import { generateTimeOptions, calcHours } from '@/lib/utils/time';
 import Modal from './Modal';
 
 interface ShiftModalProps {
@@ -47,7 +47,7 @@ export default function ShiftModal({ isOpen, onClose, editShiftId, prefillEmpId,
   const handleSave = async () => {
     if (!empId) return;
     if (startTime >= endTime) {
-      alert('End time must be after start time.');
+      onToast('End time must be after start time');
       return;
     }
 
@@ -61,70 +61,58 @@ export default function ShiftModal({ isOpen, onClose, editShiftId, prefillEmpId,
     onClose();
   };
 
+  const hours = calcHours(startTime, endTime);
+  const inputCls = "w-full border border-[var(--color-border-strong)] rounded-md px-3 py-2 text-[13px] bg-white text-[var(--color-text)] focus:border-[var(--color-accent)] outline-none transition-colors";
+  const labelCls = "block text-[10px] font-semibold uppercase tracking-wider text-[var(--color-muted)] mb-1.5 font-mono";
+
   return (
     <Modal
       isOpen={isOpen}
       onClose={onClose}
       title={editShiftId ? 'Edit Shift' : 'Add Shift'}
-      width="max-w-sm"
+      width="max-w-md"
       footer={
         <>
-          <button onClick={onClose} className="text-[13px] font-medium px-3.5 py-[7px] rounded-md bg-transparent text-[var(--color-text)] border border-[var(--color-border)] hover:bg-[var(--color-bg)] transition-all">
+          <button onClick={onClose} className="text-[13px] font-medium px-4 py-2 rounded-lg bg-white text-[var(--color-text-2)] border border-[var(--color-border-strong)] hover:bg-[var(--color-bg)] transition-all">
             Cancel
           </button>
-          <button onClick={handleSave} className="text-[13px] font-medium px-3.5 py-[7px] rounded-md bg-[var(--color-accent)] text-white border border-[var(--color-accent)] hover:bg-[#b03f25] transition-all">
-            Save Shift
+          <button onClick={handleSave} className="text-[13px] font-medium px-4 py-2 rounded-lg bg-[var(--color-accent)] text-white border border-[var(--color-accent)] hover:bg-[var(--color-accent-hover)] transition-all shadow-sm">
+            {editShiftId ? 'Save Changes' : 'Add Shift'}
           </button>
         </>
       }
     >
-      <div className="space-y-3.5">
+      <div className="space-y-4">
         <div>
-          <label className="block text-[10px] font-semibold uppercase tracking-wider text-[var(--color-muted)] mb-1 font-mono">Employee</label>
-          <select
-            className="w-full border border-[var(--color-border)] rounded px-2.5 py-[7px] text-[13px] bg-[var(--color-surface)] text-[var(--color-text)] focus:border-[var(--color-accent)] outline-none"
-            value={empId}
-            onChange={(e) => setEmpId(e.target.value)}
-          >
+          <label className={labelCls}>Employee</label>
+          <select className={inputCls} value={empId} onChange={(e) => setEmpId(e.target.value)}>
             {employees.map(e => (
-              <option key={e.id} value={e.id}>{e.name} ({e.role})</option>
+              <option key={e.id} value={e.id}>{e.name} — {e.role}</option>
             ))}
           </select>
         </div>
 
         <div>
-          <label className="block text-[10px] font-semibold uppercase tracking-wider text-[var(--color-muted)] mb-1 font-mono">Day</label>
-          <select
-            className="w-full border border-[var(--color-border)] rounded px-2.5 py-[7px] text-[13px] bg-[var(--color-surface)] text-[var(--color-text)] focus:border-[var(--color-accent)] outline-none"
-            value={day}
-            onChange={(e) => setDay(parseInt(e.target.value))}
-          >
+          <label className={labelCls}>Day</label>
+          <select className={inputCls} value={day} onChange={(e) => setDay(parseInt(e.target.value))}>
             {DAY_FULL.map((d, i) => (
               <option key={i} value={i}>{d}</option>
             ))}
           </select>
         </div>
 
-        <div className="flex gap-2.5">
-          <div className="flex-1">
-            <label className="block text-[10px] font-semibold uppercase tracking-wider text-[var(--color-muted)] mb-1 font-mono">Start</label>
-            <select
-              className="w-full border border-[var(--color-border)] rounded px-2.5 py-[7px] text-[13px] bg-[var(--color-surface)] text-[var(--color-text)] focus:border-[var(--color-accent)] outline-none"
-              value={startTime}
-              onChange={(e) => setStartTime(e.target.value)}
-            >
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className={labelCls}>Start</label>
+            <select className={inputCls} value={startTime} onChange={(e) => setStartTime(e.target.value)}>
               {timeOptions.map(t => (
                 <option key={t.value} value={t.value}>{t.label}</option>
               ))}
             </select>
           </div>
-          <div className="flex-1">
-            <label className="block text-[10px] font-semibold uppercase tracking-wider text-[var(--color-muted)] mb-1 font-mono">End</label>
-            <select
-              className="w-full border border-[var(--color-border)] rounded px-2.5 py-[7px] text-[13px] bg-[var(--color-surface)] text-[var(--color-text)] focus:border-[var(--color-accent)] outline-none"
-              value={endTime}
-              onChange={(e) => setEndTime(e.target.value)}
-            >
+          <div>
+            <label className={labelCls}>End</label>
+            <select className={inputCls} value={endTime} onChange={(e) => setEndTime(e.target.value)}>
               {timeOptions.map(t => (
                 <option key={t.value} value={t.value}>{t.label}</option>
               ))}
@@ -132,12 +120,18 @@ export default function ShiftModal({ isOpen, onClose, editShiftId, prefillEmpId,
           </div>
         </div>
 
+        {hours > 0 && (
+          <div className="text-[12px] font-mono text-[var(--color-muted)] text-center py-1.5 bg-[var(--color-surface-2)] rounded-md">
+            Shift length: <strong className="text-[var(--color-text)]">{hours} {hours === 1 ? 'hour' : 'hours'}</strong>
+          </div>
+        )}
+
         <div>
-          <label className="block text-[10px] font-semibold uppercase tracking-wider text-[var(--color-muted)] mb-1 font-mono">Note (optional)</label>
+          <label className={labelCls}>Note (optional)</label>
           <input
             type="text"
-            className="w-full border border-[var(--color-border)] rounded px-2.5 py-[7px] text-[13px] bg-[var(--color-surface)] text-[var(--color-text)] focus:border-[var(--color-accent)] outline-none"
-            placeholder="e.g. opening, closing..."
+            className={inputCls}
+            placeholder="e.g. opening, closing, training..."
             value={note}
             onChange={(e) => setNote(e.target.value)}
             onKeyDown={(e) => { if (e.key === 'Enter') handleSave(); }}
