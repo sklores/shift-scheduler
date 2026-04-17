@@ -5,7 +5,7 @@ import type { DataAdapter } from '../data/adapter';
 import type { Employee, Shift, Template, WeekStats } from '../data/types';
 import { EMPLOYEE_COLORS } from '../data/types';
 import { calculateWeekStats } from '../utils/cost';
-import { getWeekDates, formatWeekLabel, formatWeekStartISO } from '../utils/week';
+import { getWeekDates, formatWeekLabel, formatWeekLabelCompact, formatWeekStartISO } from '../utils/week';
 
 export function useScheduler(adapter: DataAdapter) {
   const [employees, setEmployees] = useState<Employee[]>([]);
@@ -151,6 +151,7 @@ export function useScheduler(adapter: DataAdapter) {
   // --- Computed ---
   const weekStats: WeekStats = useMemo(() => calculateWeekStats(shifts, employees), [shifts, employees]);
   const weekLabel = useMemo(() => formatWeekLabel(weekOffset), [weekOffset]);
+  const weekLabelCompact = useMemo(() => formatWeekLabelCompact(weekOffset), [weekOffset]);
   const weekDates = useMemo(() => getWeekDates(weekOffset), [weekOffset]);
 
   const getShiftsForCell = useCallback((empId: string, day: number): Shift[] => {
@@ -197,6 +198,7 @@ export function useScheduler(adapter: DataAdapter) {
     // Computed
     weekStats,
     weekLabel,
+    weekLabelCompact,
     weekDates,
     getShiftsForCell,
     getEmployeeById,

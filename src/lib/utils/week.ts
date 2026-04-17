@@ -22,6 +22,19 @@ export function formatWeekLabel(offset: number = 0): string {
   return `${fmt(dates[0])} – ${fmt(dates[6])}`;
 }
 
+/** Compact form, e.g. "Apr 13–19" when both dates share a month, "Apr 30–May 6" when not */
+export function formatWeekLabelCompact(offset: number = 0): string {
+  const dates = getWeekDates(offset);
+  const start = dates[0];
+  const end = dates[6];
+  const startMonth = start.toLocaleDateString('en-US', { month: 'short' });
+  const endMonth = end.toLocaleDateString('en-US', { month: 'short' });
+  if (startMonth === endMonth) {
+    return `${startMonth} ${start.getDate()}–${end.getDate()}`;
+  }
+  return `${startMonth} ${start.getDate()}–${endMonth} ${end.getDate()}`;
+}
+
 export function isToday(date: Date): boolean {
   const now = new Date();
   return (
