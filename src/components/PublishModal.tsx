@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useSchedulerContext } from '@/context/SchedulerContext';
 import { getPublishRecipients, buildScheduleMessage } from '@/lib/utils/schedule-message';
 import { cleanPhone } from '@/lib/utils/phone';
+import { formatWeekStartISO } from '@/lib/utils/week';
 import Modal from './Modal';
 
 interface PublishModalProps {
@@ -37,21 +38,70 @@ export default function PublishModal({ isOpen, onClose, onToast }: PublishModalP
   const handleClose = () => {
     setPhase('preview');
     setResults([]);
+    setSendError(null);
     onClose();
   };
 
+  const [sendError, setSendError] = useState<string | null>(null);
+
   const handleSend = async () => {
     setPhase('sending');
-    // Stubbed — simulate sending
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    const mockResults: SendResult[] = recipients.map(r => ({
-      name: r.emp.name,
-      to: r.to,
-      status: 'sent' as const,
-    }));
-    setResults(mockResults);
-    setPhase('results');
-    onToast(`Sent ${mockResults.length} schedule${mockResults.length !== 1 ? 's' : ''}`);
+    setSendError(null);
+
+    const payload = {
+      fromWeekStart: formatWeekStartISO(weekOffset),
+      messages: recipients.map(r => ({ to: r.to, body: r.body })),
+    };
+
+    try {
+      const res = await fetch('/api/send-schedule', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json().catch(() => ({}));
+
+      if (!res.ok && !Array.isArray(data?.results)) {
+        throw new Error(data?.error || `Send failed (${res.status})`);
+      }
+
+      const apiResults: Array<{ to: string; status: 'sent' | 'failed'; reason?: string; sid?: string }> =
+        Array.isArray(data.results) ? data.results : [];
+
+      // Map API results back to recipient names
+      const mapped: SendResult[] = recipients.map((r) => {
+        const match = apiResults.find((x) => x.to === r.to);
+        return {
+          name: r.emp.name,
+          to: r.to,
+          status: match?.status === 'sent' ? 'sent' : 'failed',
+          reason: match?.reason,
+        };
+      });
+
+      setResults(mapped);
+      setPhase('results');
+      const sentCount = mapped.filter(m => m.status === 'sent').length;
+      const failedCount = mapped.length - sentCount;
+      if (failedCount === 0) {
+        onToast(`Sent ${sentCount} schedule${sentCount !== 1 ? 's' : ''}`);
+      } else {
+        onToast(`Sent ${sentCount} · ${failedCount} failed`);
+      }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Unknown error';
+      setSendError(message);
+      // Mark all as failed with the error
+      const failed: SendResult[] = recipients.map(r => ({
+        name: r.emp.name,
+        to: r.to,
+        status: 'failed',
+        reason: message,
+      }));
+      setResults(failed);
+      setPhase('results');
+      onToast('Send failed');
+    }
   };
 
   const headerCls = "bg-[var(--color-green)] text-white";
@@ -86,16 +136,28 @@ export default function PublishModal({ isOpen, onClose, onToast }: PublishModalP
             <div className="text-[13px] text-[var(--color-accent)] mt-1">{failedCount} failed</div>
           )}
         </div>
+        {sendError && (
+          <div className="mb-3 px-3.5 py-2.5 bg-[var(--color-accent-light)] border border-[var(--color-accent)]/40 rounded-lg text-[12px] text-[var(--color-accent-hover)]">
+            <strong>Server error:</strong> {sendError}
+          </div>
+        )}
         <div className="space-y-1">
           {results.map((r, i) => (
-            <div key={i} className="flex items-center gap-3 py-2.5 px-3 rounded-lg bg-[var(--color-surface-2)]">
-              <div className="flex-1 min-w-0">
-                <div className="text-[13px] font-medium truncate">{r.name}</div>
-                <div className="font-mono text-[11px] text-[var(--color-muted)]">{r.to}</div>
+            <div key={i} className="py-2.5 px-3 rounded-lg bg-[var(--color-surface-2)]">
+              <div className="flex items-center gap-3">
+                <div className="flex-1 min-w-0">
+                  <div className="text-[13px] font-medium truncate">{r.name}</div>
+                  <div className="font-mono text-[11px] text-[var(--color-muted)]">{r.to}</div>
+                </div>
+                <Badge variant={r.status === 'sent' ? 'success' : 'danger'}>
+                  {r.status === 'sent' ? '✓ sent' : '✗ failed'}
+                </Badge>
               </div>
-              <Badge variant={r.status === 'sent' ? 'success' : 'danger'}>
-                {r.status === 'sent' ? '✓ sent' : '✗ failed'}
-              </Badge>
+              {r.status === 'failed' && r.reason && (
+                <div className="mt-1.5 text-[11px] text-[var(--color-muted)] font-mono leading-relaxed">
+                  {r.reason}
+                </div>
+              )}
             </div>
           ))}
         </div>
