@@ -81,6 +81,7 @@ export default function StaffDrawer({ isOpen, onClose, onToast, onConfirm }: Sta
     <>
       {/* Overlay */}
       <div
+        {...(isOpen && { 'data-overlay': 'drawer' })}
         className={`fixed inset-0 bg-black/40 z-[300] transition-opacity ${isOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}
         onClick={onClose}
       />

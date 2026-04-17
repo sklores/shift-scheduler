@@ -35,6 +35,7 @@ export default function Modal({ isOpen, onClose, title, headerClassName, footer,
   return (
     <div
       ref={overlayRef}
+      data-overlay="modal"
       className="fixed inset-0 z-[400] flex items-end sm:items-center justify-center bg-black/50 animate-[fadeIn_0.15s_ease] p-0 sm:p-4"
       onClick={(e) => { if (e.target === overlayRef.current) onClose(); }}
     >

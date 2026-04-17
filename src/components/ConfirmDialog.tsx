@@ -40,6 +40,7 @@ export default function ConfirmDialog({ isOpen, options, onConfirm, onCancel }: 
 
   return (
     <div
+      data-overlay="confirm"
       className="fixed inset-0 z-[500] flex items-center justify-center bg-black/50 animate-[fadeIn_0.12s_ease] p-4"
       onClick={(e) => { if (e.target === e.currentTarget) onCancel(); }}
     >

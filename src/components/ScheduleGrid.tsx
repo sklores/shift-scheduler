@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useSchedulerContext } from '@/context/SchedulerContext';
 import { DAYS } from '@/lib/data/types';
 import { isToday } from '@/lib/utils/week';
@@ -37,8 +37,80 @@ export default function ScheduleGrid(props: ScheduleGridProps) {
 // Desktop Grid
 // ──────────────────────────────
 function DesktopGrid({ onAddShift, onEditShift, onDeleteShift }: ScheduleGridProps) {
-  const { employees, shifts, weekDates, getShiftsForCell, moveShift } = useSchedulerContext();
+  const { employees, shifts, weekDates, getShiftsForCell, moveShift, changeWeek } = useSchedulerContext();
   const [dragTarget, setDragTarget] = useState<string | null>(null);
+  const [focusedCell, setFocusedCell] = useState<{ row: number; col: number }>({ row: 0, col: 0 });
+  const cellRefs = useRef<Map<string, HTMLDivElement>>(new Map());
+
+  // Clamp focus when employees list shrinks
+  useEffect(() => {
+    if (employees.length === 0) return;
+    setFocusedCell(f => ({
+      row: Math.min(f.row, employees.length - 1),
+      col: Math.max(0, Math.min(6, f.col)),
+    }));
+  }, [employees.length]);
+
+  // Keyboard navigation
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      // Skip if user is typing in an input/select/textarea
+      const target = e.target as HTMLElement | null;
+      if (target) {
+        const tag = target.tagName;
+        if (tag === 'INPUT' || tag === 'SELECT' || tag === 'TEXTAREA' || target.isContentEditable) return;
+      }
+      // Skip if any modal/drawer/confirm is open
+      if (document.querySelector('[data-overlay]')) return;
+      if (employees.length === 0) return;
+
+      switch (e.key) {
+        case 'ArrowLeft':
+          e.preventDefault();
+          setFocusedCell(f => f.col === 0 ? f : { ...f, col: f.col - 1 });
+          break;
+        case 'ArrowRight':
+          e.preventDefault();
+          setFocusedCell(f => f.col === 6 ? f : { ...f, col: f.col + 1 });
+          break;
+        case 'ArrowUp':
+          e.preventDefault();
+          setFocusedCell(f => f.row === 0 ? f : { ...f, row: f.row - 1 });
+          break;
+        case 'ArrowDown':
+          e.preventDefault();
+          setFocusedCell(f => f.row >= employees.length - 1 ? f : { ...f, row: f.row + 1 });
+          break;
+        case 'Enter': {
+          e.preventDefault();
+          const emp = employees[focusedCell.row];
+          if (emp) onAddShift(emp.id, focusedCell.col);
+          break;
+        }
+        case '[':
+          // Jump to previous week
+          e.preventDefault();
+          changeWeek(-1);
+          break;
+        case ']':
+          // Jump to next week
+          e.preventDefault();
+          changeWeek(1);
+          break;
+      }
+    };
+    document.addEventListener('keydown', handler);
+    return () => document.removeEventListener('keydown', handler);
+  }, [employees, focusedCell, onAddShift, changeWeek]);
+
+  // Scroll focused cell into view when focus moves
+  useEffect(() => {
+    const key = `${focusedCell.row}-${focusedCell.col}`;
+    const el = cellRefs.current.get(key);
+    if (el) {
+      el.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: 'smooth' });
+    }
+  }, [focusedCell]);
 
   if (employees.length === 0) {
     return (
@@ -118,13 +190,20 @@ function DesktopGrid({ onAddShift, onEditShift, onDeleteShift }: ScheduleGridPro
                 const isAlt = rowIdx % 2 === 1;
                 const cellKey = `${emp.id}-${dayIdx}`;
                 const isDragOver = dragTarget === cellKey;
+                const isFocused = focusedCell.row === rowIdx && focusedCell.col === dayIdx;
+                const refKey = `${rowIdx}-${dayIdx}`;
 
                 return (
                   <div
                     key={cellKey}
+                    ref={(el) => {
+                      if (el) cellRefs.current.set(refKey, el);
+                      else cellRefs.current.delete(refKey);
+                    }}
                     className={`border-r border-b border-[var(--color-border)] last:border-r-0 p-1.5 transition-colors overflow-hidden relative ${
                       isAlt ? 'bg-[#fafaf7]' : 'bg-[var(--color-surface)]'
-                    } ${isDragOver ? 'drag-over' : ''}`}
+                    } ${isDragOver ? 'drag-over' : ''} ${isFocused ? 'kbd-focused' : ''}`}
+                    onClick={() => setFocusedCell({ row: rowIdx, col: dayIdx })}
                     onDoubleClick={() => onAddShift(emp.id, dayIdx)}
                     onDragOver={(e) => {
                       e.preventDefault();
