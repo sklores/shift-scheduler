@@ -21,12 +21,12 @@ function initials(name: string): string {
 export default function ScheduleGrid(props: ScheduleGridProps) {
   return (
     <>
-      {/* Desktop grid */}
-      <div className="hidden md:flex flex-1 overflow-hidden">
+      {/* Desktop/tablet grid (≥1024px — keeps landscape phones on list view) */}
+      <div className="hidden lg:flex flex-1 overflow-hidden">
         <DesktopGrid {...props} />
       </div>
-      {/* Mobile list */}
-      <div className="flex md:hidden flex-1 overflow-auto">
+      {/* Phone list (portrait + landscape) */}
+      <div className="flex lg:hidden flex-1 overflow-auto">
         <MobileDayList {...props} />
       </div>
     </>
