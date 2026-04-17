@@ -14,8 +14,8 @@ export default function Toolbar({ onAddShift, onClearWeek, onSaveTemplate, onApp
   const { weekStats } = useSchedulerContext();
 
   return (
-    <div className="px-4 sm:px-6 py-3 border-b border-[var(--color-border)] bg-[var(--color-surface)]">
-      <div className="flex items-center gap-2 sm:gap-2.5 overflow-x-auto">
+    <div className="px-4 sm:px-6 py-3 border-b border-[var(--color-border)] bg-[var(--color-surface)] w-full min-w-0">
+      <div className="flex items-center gap-2 sm:gap-2.5 overflow-x-auto scrollbar-hide -mx-4 sm:-mx-6 px-4 sm:px-6">
         <button
           onClick={onAddShift}
           className="text-[13px] font-medium px-3.5 py-2 rounded-lg bg-[var(--color-accent)] text-white border border-[var(--color-accent)] hover:bg-[var(--color-accent-hover)] transition-all flex-shrink-0 flex items-center gap-1.5 shadow-sm"

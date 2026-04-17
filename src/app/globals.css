@@ -45,7 +45,9 @@
 }
 
 html, body {
-  overscroll-behavior-y: none;
+  overscroll-behavior: none;
+  overflow-x: hidden;
+  max-width: 100vw;
 }
 
 body {
@@ -93,6 +95,15 @@ body {
 .focus-ring:focus-visible {
   outline: 2px solid var(--color-accent);
   outline-offset: 2px;
+}
+
+/* Hide scrollbar but keep scrollability */
+.scrollbar-hide {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
 }
 
 /* Drag-and-drop visual cues */
