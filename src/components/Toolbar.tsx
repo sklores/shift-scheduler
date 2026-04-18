@@ -1,7 +1,7 @@
 'use client';
 
 import { useSchedulerContext } from '@/context/SchedulerContext';
-import { formatCurrency } from '@/lib/utils/cost';
+import { formatCurrency, estimatedTax, laborPlusTax, PAYROLL_TAX_RATE } from '@/lib/utils/cost';
 
 interface ToolbarProps {
   onAddShift: () => void;
@@ -44,16 +44,18 @@ export default function Toolbar({ onAddShift, onClearWeek, onSaveTemplate, onApp
         {/* Keyboard hint — desktop only */}
         <div className="hidden lg:flex ml-auto items-center gap-1.5 text-[11px] text-[var(--color-muted)] mr-3 font-mono whitespace-nowrap">
           <Kbd>↑↓←→</Kbd>
-          <span>navigate</span>
+          <span>move</span>
           <Kbd>Enter</Kbd>
-          <span>add shift</span>
-          <Kbd>[ ]</Kbd>
-          <span>week</span>
+          <span>add</span>
+          <Kbd>C</Kbd><Kbd>V</Kbd>
+          <span>copy·paste</span>
+          <Kbd>?</Kbd>
+          <span>all</span>
         </div>
 
         {/* Stats — desktop */}
         <div className="hidden md:flex lg:ml-0 ml-auto gap-2">
-          <Stat label="Labor Cost" value={formatCurrency(weekStats.totalCost)} accent />
+          <CostStat labor={weekStats.totalCost} />
           <Stat label="Hours" value={`${weekStats.totalHours.toFixed(0)}h`} />
           <Stat label="Shifts" value={String(weekStats.totalShifts)} />
         </div>
@@ -61,7 +63,7 @@ export default function Toolbar({ onAddShift, onClearWeek, onSaveTemplate, onApp
 
       {/* Stats — mobile (below buttons) */}
       <div className="flex md:hidden gap-2 mt-3">
-        <Stat label="Cost" value={formatCurrency(weekStats.totalCost)} accent fill />
+        <CostStat labor={weekStats.totalCost} fill />
         <Stat label="Hours" value={`${weekStats.totalHours.toFixed(0)}h`} fill />
         <Stat label="Shifts" value={String(weekStats.totalShifts)} fill />
       </div>
@@ -85,6 +87,26 @@ function Stat({ label, value, accent = false, fill = false }: { label: string; v
       </div>
       <div className="text-[10px] text-[var(--color-muted)] uppercase tracking-wider mt-0.5">
         {label}
+      </div>
+    </div>
+  );
+}
+
+function CostStat({ labor, fill = false }: { labor: number; fill?: boolean }) {
+  const tax = estimatedTax(labor);
+  const total = laborPlusTax(labor);
+  const pct = Math.round(PAYROLL_TAX_RATE * 100);
+
+  return (
+    <div
+      className={`px-3 py-1.5 rounded-lg bg-[var(--color-surface-2)] ${fill ? 'flex-1' : ''}`}
+      title={`${formatCurrency(labor)} labor + ${formatCurrency(tax)} est. tax (${pct}%)`}
+    >
+      <div className="font-mono text-[15px] font-semibold leading-tight text-[var(--color-accent)]">
+        {formatCurrency(total)}
+      </div>
+      <div className="text-[10px] text-[var(--color-muted)] uppercase tracking-wider mt-0.5 whitespace-nowrap">
+        Total · incl. {pct}% tax
       </div>
     </div>
   );

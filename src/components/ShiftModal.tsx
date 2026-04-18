@@ -82,7 +82,10 @@ export default function ShiftModal({ isOpen, onClose, editShiftId, prefillEmpId,
         </>
       }
     >
-      <div className="space-y-4">
+      <form
+        className="space-y-4"
+        onSubmit={(e) => { e.preventDefault(); handleSave(); }}
+      >
         <div>
           <label className={labelCls}>Employee</label>
           <select className={inputCls} value={empId} onChange={(e) => setEmpId(e.target.value)}>
@@ -134,10 +137,11 @@ export default function ShiftModal({ isOpen, onClose, editShiftId, prefillEmpId,
             placeholder="e.g. opening, closing, training..."
             value={note}
             onChange={(e) => setNote(e.target.value)}
-            onKeyDown={(e) => { if (e.key === 'Enter') handleSave(); }}
           />
         </div>
-      </div>
+        {/* Hidden submit so Enter key in any field submits the form */}
+        <button type="submit" className="sr-only" aria-hidden="true" tabIndex={-1}>Save</button>
+      </form>
     </Modal>
   );
 }

@@ -37,10 +37,17 @@ export default function ScheduleGrid(props: ScheduleGridProps) {
 // ──────────────────────────────
 // Desktop Grid
 // ──────────────────────────────
+interface ShiftClipboard {
+  startTime: string;
+  endTime: string;
+  note: string;
+}
+
 function DesktopGrid({ onAddShift, onEditShift, onDeleteShift }: ScheduleGridProps) {
-  const { employees, shifts, weekDates, getShiftsForCell, moveShift, changeWeek, conflictingShiftIds } = useSchedulerContext();
+  const { employees, shifts, weekDates, getShiftsForCell, moveShift, changeWeek, conflictingShiftIds, addShift } = useSchedulerContext();
   const [dragTarget, setDragTarget] = useState<string | null>(null);
   const [focusedCell, setFocusedCell] = useState<{ row: number; col: number }>({ row: 0, col: 0 });
+  const [clipboard, setClipboard] = useState<ShiftClipboard | null>(null);
   const cellRefs = useRef<Map<string, HTMLDivElement>>(new Map());
 
   // Clamp focus when employees list shrinks
@@ -88,13 +95,66 @@ function DesktopGrid({ onAddShift, onEditShift, onDeleteShift }: ScheduleGridPro
           if (emp) onAddShift(emp.id, focusedCell.col);
           break;
         }
+        case 'e':
+        case 'E': {
+          // Edit first shift in focused cell
+          if (e.metaKey || e.ctrlKey || e.altKey) return;
+          const emp = employees[focusedCell.row];
+          if (!emp) return;
+          const cellShifts = shifts.filter(s => s.employeeId === emp.id && s.day === focusedCell.col);
+          if (cellShifts.length > 0) {
+            e.preventDefault();
+            onEditShift(cellShifts[0].id);
+          }
+          break;
+        }
+        case 'Delete':
+        case 'Backspace': {
+          const emp = employees[focusedCell.row];
+          if (!emp) return;
+          const cellShifts = shifts.filter(s => s.employeeId === emp.id && s.day === focusedCell.col);
+          if (cellShifts.length > 0) {
+            e.preventDefault();
+            onDeleteShift(cellShifts[0].id);
+          }
+          break;
+        }
+        case 'c':
+        case 'C': {
+          // Copy first shift in focused cell (bare key, no meta — so ⌘C native copy still works)
+          if (e.metaKey || e.ctrlKey || e.altKey) return;
+          const emp = employees[focusedCell.row];
+          if (!emp) return;
+          const cellShifts = shifts.filter(s => s.employeeId === emp.id && s.day === focusedCell.col);
+          if (cellShifts.length > 0) {
+            e.preventDefault();
+            const s = cellShifts[0];
+            setClipboard({ startTime: s.startTime, endTime: s.endTime, note: s.note });
+          }
+          break;
+        }
+        case 'v':
+        case 'V': {
+          // Paste clipboard shift into focused cell
+          if (e.metaKey || e.ctrlKey || e.altKey) return;
+          if (!clipboard) return;
+          const emp = employees[focusedCell.row];
+          if (!emp) return;
+          e.preventDefault();
+          addShift({
+            employeeId: emp.id,
+            day: focusedCell.col,
+            startTime: clipboard.startTime,
+            endTime: clipboard.endTime,
+            note: clipboard.note,
+          });
+          break;
+        }
         case '[':
-          // Jump to previous week
           e.preventDefault();
           changeWeek(-1);
           break;
         case ']':
-          // Jump to next week
           e.preventDefault();
           changeWeek(1);
           break;
@@ -102,7 +162,7 @@ function DesktopGrid({ onAddShift, onEditShift, onDeleteShift }: ScheduleGridPro
     };
     document.addEventListener('keydown', handler);
     return () => document.removeEventListener('keydown', handler);
-  }, [employees, focusedCell, onAddShift, changeWeek]);
+  }, [employees, shifts, focusedCell, onAddShift, onEditShift, onDeleteShift, changeWeek, addShift, clipboard]);
 
   // Scroll focused cell into view when focus moves
   useEffect(() => {

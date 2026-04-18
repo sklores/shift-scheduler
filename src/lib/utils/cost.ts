@@ -33,3 +33,19 @@ export function calculateWeekStats(shifts: Shift[], employees: Employee[]): Week
 export function formatCurrency(n: number): string {
   return '$' + n.toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
 }
+
+/**
+ * Estimated payroll tax rate. This is a rough US floor for planning purposes —
+ * includes FICA (7.65%) + a conservative allowance for unemployment insurance.
+ * Real "fully loaded" rate is usually 15–22% depending on state and workers comp.
+ * TODO: make this configurable per-org in settings once Supabase lands.
+ */
+export const PAYROLL_TAX_RATE = 0.11;
+
+export function estimatedTax(laborCost: number): number {
+  return laborCost * PAYROLL_TAX_RATE;
+}
+
+export function laborPlusTax(laborCost: number): number {
+  return laborCost * (1 + PAYROLL_TAX_RATE);
+}

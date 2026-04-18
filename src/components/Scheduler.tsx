@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useSchedulerContext } from '@/context/SchedulerContext';
 import { useToast } from '@/lib/hooks/useToast';
 import { useConfirm } from '@/lib/hooks/useConfirm';
@@ -14,6 +14,7 @@ import SaveTemplateModal from './SaveTemplateModal';
 import ApplyTemplateModal from './ApplyTemplateModal';
 import Toast from './Toast';
 import ConfirmDialog from './ConfirmDialog';
+import CheatSheet from './CheatSheet';
 
 export default function Scheduler() {
   const { isLoading, clearWeek, shifts, deleteShift } = useSchedulerContext();
@@ -30,6 +31,7 @@ export default function Scheduler() {
   const [isPublishOpen, setPublishOpen] = useState(false);
   const [isSaveTemplateOpen, setSaveTemplateOpen] = useState(false);
   const [isApplyTemplateOpen, setApplyTemplateOpen] = useState(false);
+  const [isCheatSheetOpen, setCheatSheetOpen] = useState(false);
 
   const handleAddShift = useCallback((empId: string | null = null, day: number | null = null) => {
     setEditShiftId(null);
@@ -79,6 +81,38 @@ export default function Scheduler() {
       return;
     }
     setPublishOpen(true);
+  }, [shifts.length, toast]);
+
+  // App-level keyboard shortcuts (cheat sheet, drawer, publish)
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement | null;
+      if (target) {
+        const tag = target.tagName;
+        if (tag === 'INPUT' || tag === 'SELECT' || tag === 'TEXTAREA' || target.isContentEditable) return;
+      }
+      // Cheat sheet: ? key (Shift+/ on most layouts)
+      if (e.key === '?' && !document.querySelector('[data-overlay]')) {
+        e.preventDefault();
+        setCheatSheetOpen(true);
+        return;
+      }
+      // Cmd/Ctrl + Shift + S → Staff drawer
+      if ((e.metaKey || e.ctrlKey) && e.shiftKey && (e.key === 's' || e.key === 'S')) {
+        e.preventDefault();
+        setDrawerOpen(d => !d);
+        return;
+      }
+      // Cmd/Ctrl + Shift + P → Publish
+      if ((e.metaKey || e.ctrlKey) && e.shiftKey && (e.key === 'p' || e.key === 'P')) {
+        e.preventDefault();
+        if (shifts.length) setPublishOpen(true);
+        else toast.show('No shifts scheduled yet');
+        return;
+      }
+    };
+    document.addEventListener('keydown', handler);
+    return () => document.removeEventListener('keydown', handler);
   }, [shifts.length, toast]);
 
   if (isLoading) {
@@ -145,6 +179,7 @@ export default function Scheduler() {
         onConfirm={confirm.handleConfirm}
         onCancel={confirm.handleCancel}
       />
+      <CheatSheet isOpen={isCheatSheetOpen} onClose={() => setCheatSheetOpen(false)} />
       <Toast message={toast.message} />
     </>
   );

@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useSchedulerContext } from '@/context/SchedulerContext';
 import type { EmployeeRole } from '@/lib/data/types';
-import { formatCurrency } from '@/lib/utils/cost';
+import { formatCurrency, laborPlusTax, estimatedTax, PAYROLL_TAX_RATE } from '@/lib/utils/cost';
 import StaffItem from './StaffItem';
 
 interface StaffDrawerProps {
@@ -212,9 +212,9 @@ export default function StaffDrawer({ isOpen, onClose, onToast, onConfirm }: Sta
 
         {/* Footer */}
         <div className="border-t border-[var(--color-border)] px-5 py-4 flex gap-4 sm:gap-7 bg-[var(--color-surface-2)] flex-shrink-0">
-          <div>
-            <div className="font-mono text-[18px] sm:text-[20px] font-semibold text-[var(--color-accent)]">{formatCurrency(weekStats.totalCost)}</div>
-            <div className="text-[10px] text-[var(--color-muted)] uppercase tracking-wider mt-0.5">Labor Cost</div>
+          <div title={`${formatCurrency(weekStats.totalCost)} labor + ${formatCurrency(estimatedTax(weekStats.totalCost))} est. tax (${Math.round(PAYROLL_TAX_RATE * 100)}%)`}>
+            <div className="font-mono text-[18px] sm:text-[20px] font-semibold text-[var(--color-accent)]">{formatCurrency(laborPlusTax(weekStats.totalCost))}</div>
+            <div className="text-[10px] text-[var(--color-muted)] uppercase tracking-wider mt-0.5 whitespace-nowrap">Total · incl. tax</div>
           </div>
           <div>
             <div className="font-mono text-[18px] sm:text-[20px] font-semibold">{weekStats.totalHours.toFixed(0)}h</div>
