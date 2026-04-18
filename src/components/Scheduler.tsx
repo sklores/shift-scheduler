@@ -17,7 +17,7 @@ import ConfirmDialog from './ConfirmDialog';
 import CheatSheet from './CheatSheet';
 
 export default function Scheduler() {
-  const { isLoading, clearWeek, shifts, deleteShift } = useSchedulerContext();
+  const { isLoading, clearWeek, shifts, deleteShift, copyWeek, pasteWeek } = useSchedulerContext();
   const toast = useToast();
   const confirm = useConfirm();
 
@@ -89,6 +89,28 @@ export default function Scheduler() {
     setPublishOpen(true);
   }, [shifts.length, toast]);
 
+  const handleCopyWeek = useCallback(() => {
+    const r = copyWeek();
+    if (r.copied === 0) {
+      toast.show('Nothing to copy');
+    } else {
+      toast.show(`Copied ${r.copied} shift${r.copied !== 1 ? 's' : ''}`);
+    }
+  }, [copyWeek, toast]);
+
+  const handlePasteWeek = useCallback(async () => {
+    const r = await pasteWeek();
+    if (r.added === 0 && r.skipped === 0) {
+      toast.show('Nothing to paste');
+    } else if (r.added === 0) {
+      toast.show(`All ${r.skipped} shift${r.skipped !== 1 ? 's' : ''} already exist`);
+    } else {
+      const parts = [`${r.added} added`];
+      if (r.skipped > 0) parts.push(`${r.skipped} skipped`);
+      toast.show(`Pasted · ${parts.join(' · ')}`);
+    }
+  }, [pasteWeek, toast]);
+
   // App-level keyboard shortcuts (cheat sheet, drawer, publish)
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -140,6 +162,8 @@ export default function Scheduler() {
         onClearWeek={handleClearWeek}
         onSaveTemplate={() => setSaveTemplateOpen(true)}
         onApplyTemplate={() => setApplyTemplateOpen(true)}
+        onCopyWeek={handleCopyWeek}
+        onPasteWeek={handlePasteWeek}
       />
       <div className="flex-1 flex overflow-hidden">
         <ScheduleGrid

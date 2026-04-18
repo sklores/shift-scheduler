@@ -30,7 +30,7 @@ const GROUPS: { title: string; items: Shortcut[] }[] = [
       { keys: ['Enter'], desc: 'Add shift (or save open modal)' },
       { keys: ['E'], desc: 'Edit first shift in focused cell' },
       { keys: ['Del'], desc: 'Delete first shift in focused cell' },
-      { keys: ['C'], desc: 'Copy first shift in focused cell' },
+      { keys: ['C'], desc: 'Copy focused shift' },
       { keys: ['V'], desc: 'Paste into focused cell' },
     ],
   },

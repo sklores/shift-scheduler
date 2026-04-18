@@ -8,12 +8,21 @@ import { calculateWeekStats } from '../utils/cost';
 import { findConflictingShiftIds } from '../utils/conflicts';
 import { getWeekDates, formatWeekLabel, formatWeekLabelCompact, formatWeekStartISO } from '../utils/week';
 
+interface WeekClipboardItem {
+  employeeId: string;
+  day: number;
+  startTime: string;
+  endTime: string;
+  note: string;
+}
+
 export function useScheduler(adapter: DataAdapter) {
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [shifts, setShifts] = useState<Shift[]>([]);
   const [templates, setTemplates] = useState<Template[]>([]);
   const [weekOffset, setWeekOffset] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
+  const [weekClipboard, setWeekClipboard] = useState<WeekClipboardItem[] | null>(null);
 
   // Load data on mount
   useEffect(() => {
@@ -83,6 +92,51 @@ export function useScheduler(adapter: DataAdapter) {
     await adapter.clearAllShifts();
     setShifts([]);
   }, [adapter]);
+
+  // Snapshot current week's shifts into an in-memory clipboard (no IDs — pattern only)
+  const copyWeek = useCallback(() => {
+    if (shifts.length === 0) return { copied: 0 };
+    const snapshot: WeekClipboardItem[] = shifts.map(s => ({
+      employeeId: s.employeeId,
+      day: s.day,
+      startTime: s.startTime,
+      endTime: s.endTime,
+      note: s.note,
+    }));
+    setWeekClipboard(snapshot);
+    return { copied: snapshot.length };
+  }, [shifts]);
+
+  // Apply clipboard items to the current week, skipping duplicates by
+  // (employeeId, day, startTime, endTime). Clears clipboard after.
+  const pasteWeek = useCallback(async () => {
+    if (!weekClipboard || weekClipboard.length === 0) return { added: 0, skipped: 0 };
+
+    const existingKeys = new Set(
+      shifts.map(s => `${s.employeeId}-${s.day}-${s.startTime}-${s.endTime}`)
+    );
+    const validEmpIds = new Set(employees.map(e => e.id));
+
+    let added = 0;
+    let skipped = 0;
+    for (const item of weekClipboard) {
+      const key = `${item.employeeId}-${item.day}-${item.startTime}-${item.endTime}`;
+      if (existingKeys.has(key) || !validEmpIds.has(item.employeeId)) {
+        skipped++;
+        continue;
+      }
+      await adapter.addShift(item);
+      added++;
+    }
+
+    // Refresh shifts from adapter so new IDs are picked up
+    const updated = await adapter.getShifts();
+    setShifts(updated);
+    setWeekClipboard(null);
+    return { added, skipped };
+  }, [adapter, weekClipboard, shifts, employees]);
+
+  const clearWeekClipboard = useCallback(() => setWeekClipboard(null), []);
 
   // --- Template actions ---
   const saveTemplate = useCallback(async (name: string) => {
@@ -187,6 +241,12 @@ export function useScheduler(adapter: DataAdapter) {
     deleteShift,
     moveShift,
     clearWeek,
+
+    // Week clipboard
+    weekClipboard,
+    copyWeek,
+    pasteWeek,
+    clearWeekClipboard,
 
     // Template actions
     saveTemplate,

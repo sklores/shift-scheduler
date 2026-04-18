@@ -8,10 +8,14 @@ interface ToolbarProps {
   onClearWeek: () => void;
   onSaveTemplate: () => void;
   onApplyTemplate: () => void;
+  onCopyWeek: () => void;
+  onPasteWeek: () => void;
 }
 
-export default function Toolbar({ onAddShift, onClearWeek, onSaveTemplate, onApplyTemplate }: ToolbarProps) {
-  const { weekStats } = useSchedulerContext();
+export default function Toolbar({ onAddShift, onClearWeek, onSaveTemplate, onApplyTemplate, onCopyWeek, onPasteWeek }: ToolbarProps) {
+  const { weekStats, weekClipboard, shifts } = useSchedulerContext();
+  const hasClipboard = !!weekClipboard && weekClipboard.length > 0;
+  const canCopy = shifts.length > 0;
 
   return (
     <div className="px-4 sm:px-6 py-3 border-b border-[var(--color-border)] bg-[var(--color-surface)] w-full min-w-0">
@@ -22,6 +26,29 @@ export default function Toolbar({ onAddShift, onClearWeek, onSaveTemplate, onApp
         >
           <span className="text-base leading-none -mt-px">+</span> Add Shift
         </button>
+
+        {/* Copy/Paste Week toggle */}
+        {hasClipboard ? (
+          <button
+            onClick={onPasteWeek}
+            className="text-[13px] font-medium px-3.5 py-2 rounded-lg bg-[var(--color-green)] text-white border border-[var(--color-green)] hover:bg-[var(--color-green-hover)] transition-all flex-shrink-0 flex items-center gap-1.5 shadow-sm"
+            title={`Paste ${weekClipboard!.length} shifts into this week`}
+          >
+            <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M3 4V11H10V4M3 4V3C3 2.45 3.45 2 4 2H9C9.55 2 10 2.45 10 3V4M3 4H10M5 2V1.5C5 1.22 5.22 1 5.5 1H7.5C7.78 1 8 1.22 8 1.5V2" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/></svg>
+            Paste Week ({weekClipboard!.length})
+          </button>
+        ) : (
+          <button
+            onClick={onCopyWeek}
+            disabled={!canCopy}
+            className="text-[13px] font-medium px-3.5 py-2 rounded-lg bg-transparent text-[var(--color-text-2)] border border-[var(--color-border-strong)] hover:bg-[var(--color-bg)] hover:text-[var(--color-text)] transition-all flex-shrink-0 flex items-center gap-1.5 disabled:opacity-40 disabled:cursor-not-allowed"
+            title={canCopy ? `Copy ${shifts.length} shifts — then paste into any week` : 'Nothing to copy — week is empty'}
+          >
+            <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><rect x="3" y="3" width="7" height="8" rx="1" stroke="currentColor" strokeWidth="1.4"/><path d="M5 3V2C5 1.45 5.45 1 6 1H10C10.55 1 11 1.45 11 2V6" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/></svg>
+            Copy Week
+          </button>
+        )}
+
         <button
           onClick={onApplyTemplate}
           className="text-[13px] font-medium px-3.5 py-2 rounded-lg bg-transparent text-[var(--color-text-2)] border border-[var(--color-border-strong)] hover:bg-[var(--color-bg)] hover:text-[var(--color-text)] transition-all flex-shrink-0"
