@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { useSchedulerContext } from '@/context/SchedulerContext';
 import { DAY_FULL } from '@/lib/data/types';
 import { generateTimeOptions, calcHours } from '@/lib/utils/time';
@@ -60,6 +60,27 @@ export default function ShiftModal({ isOpen, onClose, editShiftId, prefillEmpId,
     }
     onClose();
   };
+
+  // Keep handler ref fresh so the Enter listener below always sees current state
+  const handleSaveRef = useRef(handleSave);
+  handleSaveRef.current = handleSave;
+
+  // Enter submits from anywhere in the modal (except Cancel button), regardless of focus
+  useEffect(() => {
+    if (!isOpen) return;
+    const handler = (e: KeyboardEvent) => {
+      if (e.key !== 'Enter' || e.shiftKey) return;
+      const t = e.target as HTMLElement | null;
+      // Let Enter on Cancel button / close button act as a click
+      if (t && t.tagName === 'BUTTON') return;
+      // Let textareas have newlines (none currently, but safety)
+      if (t && t.tagName === 'TEXTAREA') return;
+      e.preventDefault();
+      handleSaveRef.current();
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [isOpen]);
 
   const hours = calcHours(startTime, endTime);
   const inputCls = "w-full border border-[var(--color-border-strong)] rounded-md px-3 py-2 text-[13px] bg-white text-[var(--color-text)] focus:border-[var(--color-accent)] outline-none transition-colors";
