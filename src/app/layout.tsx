@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { IBM_Plex_Sans, IBM_Plex_Mono } from "next/font/google";
 import "./globals.css";
 
@@ -15,8 +15,28 @@ const plexMono = IBM_Plex_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Shift — Employee Scheduler",
-  description: "Employee scheduling app",
+  metadataBase: new URL("https://schedule.anddone.ai"),
+  title: {
+    default: "Shift — Employee Scheduler",
+    template: "%s · Shift",
+  },
+  description: "Build a week's schedule in a minute. A fast, keyboard-friendly employee scheduler with SMS publishing.",
+  openGraph: {
+    title: "Shift — Employee Scheduler",
+    description: "Build a week's schedule in a minute.",
+    siteName: "Shift",
+    type: "website",
+    url: "https://schedule.anddone.ai",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Shift — Employee Scheduler",
+    description: "Build a week's schedule in a minute.",
+  },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#1f1b16",
 };
 
 export default function RootLayout({

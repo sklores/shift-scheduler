@@ -6,6 +6,7 @@ import { DAYS } from '@/lib/data/types';
 import { isToday } from '@/lib/utils/week';
 import { employeeWeeklyHours, employeeWeeklyCost, formatCurrency } from '@/lib/utils/cost';
 import { calcHours } from '@/lib/utils/time';
+import { isOvertime, OT_THRESHOLD_HOURS } from '@/lib/utils/conflicts';
 import ShiftBlock from './ShiftBlock';
 
 interface ScheduleGridProps {
@@ -37,7 +38,7 @@ export default function ScheduleGrid(props: ScheduleGridProps) {
 // Desktop Grid
 // ──────────────────────────────
 function DesktopGrid({ onAddShift, onEditShift, onDeleteShift }: ScheduleGridProps) {
-  const { employees, shifts, weekDates, getShiftsForCell, moveShift, changeWeek } = useSchedulerContext();
+  const { employees, shifts, weekDates, getShiftsForCell, moveShift, changeWeek, conflictingShiftIds } = useSchedulerContext();
   const [dragTarget, setDragTarget] = useState<string | null>(null);
   const [focusedCell, setFocusedCell] = useState<{ row: number; col: number }>({ row: 0, col: 0 });
   const cellRefs = useRef<Map<string, HTMLDivElement>>(new Map());
@@ -177,7 +178,11 @@ function DesktopGrid({ onAddShift, onEditShift, onDeleteShift }: ScheduleGridPro
                   <div className="text-[11px] text-[var(--color-muted)] capitalize">{emp.role}</div>
                 </div>
                 <div className="text-right font-mono text-[11px] flex-shrink-0">
-                  <div className="text-[var(--color-muted)]">{weeklyHrs.toFixed(0)}h</div>
+                  <div className={`flex items-center gap-1 justify-end ${isOvertime(weeklyHrs) ? 'text-[var(--color-warn)] font-semibold' : 'text-[var(--color-muted)]'}`}
+                       title={isOvertime(weeklyHrs) ? `${weeklyHrs.toFixed(0)}h — ${(weeklyHrs - OT_THRESHOLD_HOURS).toFixed(0)}h over 40` : undefined}>
+                    {isOvertime(weeklyHrs) && <span aria-label="Overtime">&#9888;</span>}
+                    <span>{weeklyHrs.toFixed(0)}h</span>
+                  </div>
                   <div className="text-[var(--color-accent)] font-semibold">
                     {formatCurrency(weeklyCost)}
                   </div>
@@ -203,7 +208,16 @@ function DesktopGrid({ onAddShift, onEditShift, onDeleteShift }: ScheduleGridPro
                     className={`border-r border-b border-[var(--color-border)] last:border-r-0 p-1.5 transition-colors overflow-hidden relative ${
                       isAlt ? 'bg-[#fafaf7]' : 'bg-[var(--color-surface)]'
                     } ${isDragOver ? 'drag-over' : ''} ${isFocused ? 'kbd-focused' : ''}`}
-                    onClick={() => setFocusedCell({ row: rowIdx, col: dayIdx })}
+                    onClick={(e) => {
+                      // Ignore clicks on shift blocks or the + button (they have their own handlers)
+                      const target = e.target as HTMLElement;
+                      if (target.closest('[data-shift-block]') || target.closest('[data-add-btn]')) return;
+                      setFocusedCell({ row: rowIdx, col: dayIdx });
+                      // Empty cell → open add shift immediately
+                      if (cellShifts.length === 0) {
+                        onAddShift(emp.id, dayIdx);
+                      }
+                    }}
                     onDoubleClick={() => onAddShift(emp.id, dayIdx)}
                     onDragOver={(e) => {
                       e.preventDefault();
@@ -229,12 +243,14 @@ function DesktopGrid({ onAddShift, onEditShift, onDeleteShift }: ScheduleGridPro
                           onEdit={onEditShift}
                           onDelete={onDeleteShift}
                           compact
+                          conflict={conflictingShiftIds.has(shift.id)}
                         />
                       ))}
                     </div>
                     <button
+                      data-add-btn
                       className="block w-full border border-dashed border-[var(--color-border-strong)] text-[var(--color-muted)] rounded-md text-[11px] text-center py-[3px] mt-1 hover:border-[var(--color-accent)] hover:text-[var(--color-accent)] hover:bg-[var(--color-accent-subtle)] transition-all"
-                      onClick={() => onAddShift(emp.id, dayIdx)}
+                      onClick={(e) => { e.stopPropagation(); onAddShift(emp.id, dayIdx); }}
                     >
                       +
                     </button>
@@ -253,7 +269,7 @@ function DesktopGrid({ onAddShift, onEditShift, onDeleteShift }: ScheduleGridPro
 // Mobile Day List
 // ──────────────────────────────
 function MobileDayList({ onAddShift, onEditShift, onDeleteShift }: ScheduleGridProps) {
-  const { employees, shifts, weekDates, getEmployeeById } = useSchedulerContext();
+  const { employees, shifts, weekDates, getEmployeeById, conflictingShiftIds } = useSchedulerContext();
 
   if (employees.length === 0) {
     return <EmptyState />;
@@ -296,6 +312,7 @@ function MobileDayList({ onAddShift, onEditShift, onDeleteShift }: ScheduleGridP
                     onDelete={onDeleteShift}
                     showEmployeeName
                     draggable={false}
+                    conflict={conflictingShiftIds.has(shift.id)}
                   />
                 );
               })}

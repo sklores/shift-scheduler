@@ -5,6 +5,7 @@ import type { DataAdapter } from '../data/adapter';
 import type { Employee, Shift, Template, WeekStats } from '../data/types';
 import { EMPLOYEE_COLORS } from '../data/types';
 import { calculateWeekStats } from '../utils/cost';
+import { findConflictingShiftIds } from '../utils/conflicts';
 import { getWeekDates, formatWeekLabel, formatWeekLabelCompact, formatWeekStartISO } from '../utils/week';
 
 export function useScheduler(adapter: DataAdapter) {
@@ -150,6 +151,7 @@ export function useScheduler(adapter: DataAdapter) {
 
   // --- Computed ---
   const weekStats: WeekStats = useMemo(() => calculateWeekStats(shifts, employees), [shifts, employees]);
+  const conflictingShiftIds = useMemo(() => findConflictingShiftIds(shifts), [shifts]);
   const weekLabel = useMemo(() => formatWeekLabel(weekOffset), [weekOffset]);
   const weekLabelCompact = useMemo(() => formatWeekLabelCompact(weekOffset), [weekOffset]);
   const weekDates = useMemo(() => getWeekDates(weekOffset), [weekOffset]);
@@ -200,6 +202,7 @@ export function useScheduler(adapter: DataAdapter) {
     weekLabel,
     weekLabelCompact,
     weekDates,
+    conflictingShiftIds,
     getShiftsForCell,
     getEmployeeById,
     nextColor,

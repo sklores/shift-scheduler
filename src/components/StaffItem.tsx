@@ -2,6 +2,7 @@
 
 import type { Employee } from '@/lib/data/types';
 import { employeeWeeklyHours, employeeWeeklyCost, formatCurrency } from '@/lib/utils/cost';
+import { isOvertime, OT_THRESHOLD_HOURS } from '@/lib/utils/conflicts';
 import { useSchedulerContext } from '@/context/SchedulerContext';
 
 interface StaffItemProps {
@@ -50,7 +51,11 @@ export default function StaffItem({ employee, onRemove }: StaffItemProps) {
           <div className="font-mono text-[14px] font-semibold text-[var(--color-accent)]">
             {formatCurrency(weeklyCost)}
           </div>
-          <div className="text-[10px] text-[var(--color-muted)] uppercase tracking-wider font-mono">{weeklyHrs.toFixed(0)}h/wk</div>
+          <div className={`text-[10px] uppercase tracking-wider font-mono flex items-center justify-end gap-1 ${isOvertime(weeklyHrs) ? 'text-[var(--color-warn)] font-semibold' : 'text-[var(--color-muted)]'}`}
+               title={isOvertime(weeklyHrs) ? `${(weeklyHrs - OT_THRESHOLD_HOURS).toFixed(0)}h over 40` : undefined}>
+            {isOvertime(weeklyHrs) && <span aria-label="Overtime">&#9888;</span>}
+            <span>{weeklyHrs.toFixed(0)}h/wk</span>
+          </div>
         </div>
 
         <button
