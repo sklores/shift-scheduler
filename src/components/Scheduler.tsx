@@ -189,6 +189,7 @@ export default function Scheduler() {
         prefillEmpId={prefillEmpId}
         prefillDay={prefillDay}
         onToast={toast.show}
+        onDelete={handleDeleteShift}
       />
       <PublishModal
         isOpen={isPublishOpen}

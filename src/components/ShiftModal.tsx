@@ -13,9 +13,10 @@ interface ShiftModalProps {
   prefillEmpId: string | null;
   prefillDay: number | null;
   onToast: (msg: string) => void;
+  onDelete: (shiftId: string) => void | Promise<void>;
 }
 
-export default function ShiftModal({ isOpen, onClose, editShiftId, prefillEmpId, prefillDay, onToast }: ShiftModalProps) {
+export default function ShiftModal({ isOpen, onClose, editShiftId, prefillEmpId, prefillDay, onToast, onDelete }: ShiftModalProps) {
   const { employees, shifts, addShift, updateShift } = useSchedulerContext();
   const timeOptions = useMemo(() => generateTimeOptions(), []);
 
@@ -78,14 +79,24 @@ export default function ShiftModal({ isOpen, onClose, editShiftId, prefillEmpId,
       title={editShiftId ? 'Edit Shift' : 'Add Shift'}
       width="max-w-md"
       footer={
-        <>
-          <button onClick={onClose} className="text-[13px] font-medium px-4 py-2 rounded-lg bg-white text-[var(--color-text-2)] border border-[var(--color-border-strong)] hover:bg-[var(--color-bg)] transition-all">
-            Cancel
-          </button>
-          <button onClick={handleSave} className="text-[13px] font-medium px-4 py-2 rounded-lg bg-[var(--color-accent)] text-white border border-[var(--color-accent)] hover:bg-[var(--color-accent-hover)] transition-all shadow-sm">
-            {editShiftId ? 'Save Changes' : 'Add Shift'}
-          </button>
-        </>
+        <div className="flex w-full items-center gap-2.5">
+          {editShiftId && (
+            <button
+              onClick={() => { if (editShiftId) { onDelete(editShiftId); onClose(); } }}
+              className="text-[13px] font-medium px-4 py-2 rounded-lg bg-white text-[var(--color-accent)] border border-[var(--color-accent)]/40 hover:bg-[var(--color-accent-subtle)] hover:border-[var(--color-accent)] transition-all"
+            >
+              Remove Shift
+            </button>
+          )}
+          <div className="flex gap-2.5 ml-auto">
+            <button onClick={onClose} className="text-[13px] font-medium px-4 py-2 rounded-lg bg-white text-[var(--color-text-2)] border border-[var(--color-border-strong)] hover:bg-[var(--color-bg)] transition-all">
+              Cancel
+            </button>
+            <button onClick={handleSave} className="text-[13px] font-medium px-4 py-2 rounded-lg bg-[var(--color-accent)] text-white border border-[var(--color-accent)] hover:bg-[var(--color-accent-hover)] transition-all shadow-sm">
+              {editShiftId ? 'Save Changes' : 'Add Shift'}
+            </button>
+          </div>
+        </div>
       }
     >
       <form
