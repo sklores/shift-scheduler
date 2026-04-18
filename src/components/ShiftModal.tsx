@@ -21,28 +21,13 @@ export default function ShiftModal({ isOpen, onClose, editShiftId, prefillEmpId,
 
   const editShift = editShiftId ? shifts.find(s => s.id === editShiftId) : null;
 
-  const [empId, setEmpId] = useState('');
-  const [day, setDay] = useState(0);
-  const [startTime, setStartTime] = useState('09:00');
-  const [endTime, setEndTime] = useState('17:00');
-  const [note, setNote] = useState('');
-
-  useEffect(() => {
-    if (!isOpen) return;
-    if (editShift) {
-      setEmpId(editShift.employeeId);
-      setDay(editShift.day);
-      setStartTime(editShift.startTime);
-      setEndTime(editShift.endTime);
-      setNote(editShift.note);
-    } else {
-      setEmpId(prefillEmpId || employees[0]?.id || '');
-      setDay(prefillDay ?? 0);
-      setStartTime('09:00');
-      setEndTime('17:00');
-      setNote('');
-    }
-  }, [isOpen, editShift, prefillEmpId, prefillDay, employees]);
+  // Lazy initializers so state starts correct on mount — no timing gap.
+  // Parent remounts this component via key= on every open, so initializers run fresh.
+  const [empId, setEmpId] = useState(() => editShift?.employeeId || prefillEmpId || employees[0]?.id || '');
+  const [day, setDay] = useState<number>(() => editShift?.day ?? prefillDay ?? 0);
+  const [startTime, setStartTime] = useState(() => editShift?.startTime || '09:00');
+  const [endTime, setEndTime] = useState(() => editShift?.endTime || '17:00');
+  const [note, setNote] = useState(() => editShift?.note || '');
 
   const handleSave = async () => {
     if (!empId) return;

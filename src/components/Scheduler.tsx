@@ -27,6 +27,10 @@ export default function Scheduler() {
   const [editShiftId, setEditShiftId] = useState<string | null>(null);
   const [prefillEmpId, setPrefillEmpId] = useState<string | null>(null);
   const [prefillDay, setPrefillDay] = useState<number | null>(null);
+  // Bump this every time we open the shift modal so React remounts it with
+  // fresh lazy-init state — prevents state-reset timing bugs when user hits
+  // Enter rapidly after opening.
+  const [shiftModalKey, setShiftModalKey] = useState(0);
 
   const [isPublishOpen, setPublishOpen] = useState(false);
   const [isSaveTemplateOpen, setSaveTemplateOpen] = useState(false);
@@ -37,6 +41,7 @@ export default function Scheduler() {
     setEditShiftId(null);
     setPrefillEmpId(empId);
     setPrefillDay(day);
+    setShiftModalKey(k => k + 1);
     setShiftModalOpen(true);
   }, []);
 
@@ -44,6 +49,7 @@ export default function Scheduler() {
     setEditShiftId(shiftId);
     setPrefillEmpId(null);
     setPrefillDay(null);
+    setShiftModalKey(k => k + 1);
     setShiftModalOpen(true);
   }, []);
 
@@ -150,6 +156,7 @@ export default function Scheduler() {
         onConfirm={confirm.ask}
       />
       <ShiftModal
+        key={shiftModalKey}
         isOpen={isShiftModalOpen}
         onClose={() => setShiftModalOpen(false)}
         editShiftId={editShiftId}
