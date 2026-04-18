@@ -2,12 +2,14 @@
 
 import { createContext, useContext, useMemo } from 'react';
 import { useScheduler, type SchedulerState } from '@/lib/hooks/useScheduler';
-import { LocalStorageAdapter } from '@/lib/data/local-storage';
+import { SupabaseAdapter } from '@/lib/data/supabase-adapter';
+import { useAuth } from './AuthContext';
 
 const SchedulerContext = createContext<SchedulerState | null>(null);
 
 export function SchedulerProvider({ children }: { children: React.ReactNode }) {
-  const adapter = useMemo(() => new LocalStorageAdapter(), []);
+  const { supabase } = useAuth();
+  const adapter = useMemo(() => new SupabaseAdapter(supabase), [supabase]);
   const scheduler = useScheduler(adapter);
 
   return (

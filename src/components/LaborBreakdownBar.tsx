@@ -16,7 +16,7 @@ function readNumber(key: string): number {
 }
 
 export default function LaborBreakdownBar() {
-  const { shifts, employees } = useSchedulerContext();
+  const { currentWeekShifts, employees } = useSchedulerContext();
 
   // User-entered pools (persisted in localStorage)
   const [salary, setSalary] = useState<number>(0);
@@ -40,8 +40,8 @@ export default function LaborBreakdownBar() {
   }, [tips, hydrated]);
 
   const b = useMemo(
-    () => computeLaborBreakdown(shifts, employees, salary, tips),
-    [shifts, employees, salary, tips]
+    () => computeLaborBreakdown(currentWeekShifts, employees, salary, tips),
+    [currentWeekShifts, employees, salary, tips]
   );
 
   const pct = Math.round(PAYROLL_TAX_RATE * 100);

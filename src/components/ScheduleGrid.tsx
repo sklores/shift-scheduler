@@ -3,14 +3,14 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useSchedulerContext } from '@/context/SchedulerContext';
 import { DAYS } from '@/lib/data/types';
-import { isToday } from '@/lib/utils/week';
+import { isToday, getDateForCell, toISODate } from '@/lib/utils/week';
 import { employeeWeeklyHours, employeeWeeklyCost, formatCurrency } from '@/lib/utils/cost';
 import { calcHours } from '@/lib/utils/time';
 import { isOvertime, OT_THRESHOLD_HOURS } from '@/lib/utils/conflicts';
 import ShiftBlock from './ShiftBlock';
 
 interface ScheduleGridProps {
-  onAddShift: (empId: string | null, day: number | null) => void;
+  onAddShift: (empId: string | null, date: string | null) => void;
   onEditShift: (shiftId: string) => void;
   onDeleteShift: (shiftId: string) => void;
 }
@@ -44,7 +44,7 @@ interface ShiftClipboard {
 }
 
 function DesktopGrid({ onAddShift, onEditShift, onDeleteShift }: ScheduleGridProps) {
-  const { employees, shifts, weekDates, getShiftsForCell, moveShift, changeWeek, conflictingShiftIds, addShift } = useSchedulerContext();
+  const { employees, weekDates, weekOffset, currentWeekShifts, getShiftsForCell, moveShift, changeWeek, conflictingShiftIds, addShift } = useSchedulerContext();
   const [dragTarget, setDragTarget] = useState<string | null>(null);
   const [focusedCell, setFocusedCell] = useState<{ row: number; col: number }>({ row: 0, col: 0 });
   const [clipboard, setClipboard] = useState<ShiftClipboard | null>(null);
@@ -92,16 +92,16 @@ function DesktopGrid({ onAddShift, onEditShift, onDeleteShift }: ScheduleGridPro
         case 'Enter': {
           e.preventDefault();
           const emp = employees[focusedCell.row];
-          if (emp) onAddShift(emp.id, focusedCell.col);
+          if (emp) onAddShift(emp.id, getDateForCell(weekOffset, focusedCell.col));
           break;
         }
         case 'e':
         case 'E': {
-          // Edit first shift in focused cell
           if (e.metaKey || e.ctrlKey || e.altKey) return;
           const emp = employees[focusedCell.row];
           if (!emp) return;
-          const cellShifts = shifts.filter(s => s.employeeId === emp.id && s.day === focusedCell.col);
+          const date = getDateForCell(weekOffset, focusedCell.col);
+          const cellShifts = currentWeekShifts.filter(s => s.employeeId === emp.id && s.date === date);
           if (cellShifts.length > 0) {
             e.preventDefault();
             onEditShift(cellShifts[0].id);
@@ -112,7 +112,8 @@ function DesktopGrid({ onAddShift, onEditShift, onDeleteShift }: ScheduleGridPro
         case 'Backspace': {
           const emp = employees[focusedCell.row];
           if (!emp) return;
-          const cellShifts = shifts.filter(s => s.employeeId === emp.id && s.day === focusedCell.col);
+          const date = getDateForCell(weekOffset, focusedCell.col);
+          const cellShifts = currentWeekShifts.filter(s => s.employeeId === emp.id && s.date === date);
           if (cellShifts.length > 0) {
             e.preventDefault();
             onDeleteShift(cellShifts[0].id);
@@ -121,11 +122,11 @@ function DesktopGrid({ onAddShift, onEditShift, onDeleteShift }: ScheduleGridPro
         }
         case 'c':
         case 'C': {
-          // Copy first shift in focused cell (bare key, no meta — so ⌘C native copy still works)
           if (e.metaKey || e.ctrlKey || e.altKey) return;
           const emp = employees[focusedCell.row];
           if (!emp) return;
-          const cellShifts = shifts.filter(s => s.employeeId === emp.id && s.day === focusedCell.col);
+          const date = getDateForCell(weekOffset, focusedCell.col);
+          const cellShifts = currentWeekShifts.filter(s => s.employeeId === emp.id && s.date === date);
           if (cellShifts.length > 0) {
             e.preventDefault();
             const s = cellShifts[0];
@@ -135,7 +136,6 @@ function DesktopGrid({ onAddShift, onEditShift, onDeleteShift }: ScheduleGridPro
         }
         case 'v':
         case 'V': {
-          // Paste clipboard shift into focused cell
           if (e.metaKey || e.ctrlKey || e.altKey) return;
           if (!clipboard) return;
           const emp = employees[focusedCell.row];
@@ -143,7 +143,7 @@ function DesktopGrid({ onAddShift, onEditShift, onDeleteShift }: ScheduleGridPro
           e.preventDefault();
           addShift({
             employeeId: emp.id,
-            day: focusedCell.col,
+            date: getDateForCell(weekOffset, focusedCell.col),
             startTime: clipboard.startTime,
             endTime: clipboard.endTime,
             note: clipboard.note,
@@ -162,7 +162,7 @@ function DesktopGrid({ onAddShift, onEditShift, onDeleteShift }: ScheduleGridPro
     };
     document.addEventListener('keydown', handler);
     return () => document.removeEventListener('keydown', handler);
-  }, [employees, shifts, focusedCell, onAddShift, onEditShift, onDeleteShift, changeWeek, addShift, clipboard]);
+  }, [employees, currentWeekShifts, focusedCell, weekOffset, onAddShift, onEditShift, onDeleteShift, changeWeek, addShift, clipboard]);
 
   // Scroll focused cell into view when focus moves
   useEffect(() => {
@@ -197,7 +197,8 @@ function DesktopGrid({ onAddShift, onEditShift, onDeleteShift }: ScheduleGridPro
         {/* Day headers */}
         {weekDates.map((date, i) => {
           const today = isToday(date);
-          const dayShifts = shifts.filter(s => s.day === i);
+          const iso = toISODate(date);
+          const dayShifts = currentWeekShifts.filter(s => s.date === iso);
           const dayHours = dayShifts.reduce((sum, s) => sum + calcHours(s.startTime, s.endTime), 0);
 
           return (
@@ -220,8 +221,8 @@ function DesktopGrid({ onAddShift, onEditShift, onDeleteShift }: ScheduleGridPro
 
         {/* Employee rows */}
         {employees.map((emp, rowIdx) => {
-          const weeklyHrs = employeeWeeklyHours(emp.id, shifts);
-          const weeklyCost = employeeWeeklyCost(emp.id, shifts, employees);
+          const weeklyHrs = employeeWeeklyHours(emp.id, currentWeekShifts);
+          const weeklyCost = employeeWeeklyCost(emp.id, currentWeekShifts, employees);
 
           return (
             <React.Fragment key={emp.id}>
@@ -251,9 +252,10 @@ function DesktopGrid({ onAddShift, onEditShift, onDeleteShift }: ScheduleGridPro
 
               {/* Day cells */}
               {Array.from({ length: 7 }, (_, dayIdx) => {
-                const cellShifts = getShiftsForCell(emp.id, dayIdx);
+                const cellDate = getDateForCell(weekOffset, dayIdx);
+                const cellShifts = getShiftsForCell(emp.id, cellDate);
                 const isAlt = rowIdx % 2 === 1;
-                const cellKey = `${emp.id}-${dayIdx}`;
+                const cellKey = `${emp.id}-${cellDate}`;
                 const isDragOver = dragTarget === cellKey;
                 const isFocused = focusedCell.row === rowIdx && focusedCell.col === dayIdx;
                 const refKey = `${rowIdx}-${dayIdx}`;
@@ -269,16 +271,14 @@ function DesktopGrid({ onAddShift, onEditShift, onDeleteShift }: ScheduleGridPro
                       isAlt ? 'bg-[#fafaf7]' : 'bg-[var(--color-surface)]'
                     } ${isDragOver ? 'drag-over' : ''} ${isFocused ? 'kbd-focused' : ''}`}
                     onClick={(e) => {
-                      // Ignore clicks on shift blocks or the + button (they have their own handlers)
                       const target = e.target as HTMLElement;
                       if (target.closest('[data-shift-block]') || target.closest('[data-add-btn]')) return;
                       setFocusedCell({ row: rowIdx, col: dayIdx });
-                      // Empty cell → open add shift immediately
                       if (cellShifts.length === 0) {
-                        onAddShift(emp.id, dayIdx);
+                        onAddShift(emp.id, cellDate);
                       }
                     }}
-                    onDoubleClick={() => onAddShift(emp.id, dayIdx)}
+                    onDoubleClick={() => onAddShift(emp.id, cellDate)}
                     onDragOver={(e) => {
                       e.preventDefault();
                       e.dataTransfer.dropEffect = 'move';
@@ -291,7 +291,7 @@ function DesktopGrid({ onAddShift, onEditShift, onDeleteShift }: ScheduleGridPro
                       e.preventDefault();
                       setDragTarget(null);
                       const shiftId = e.dataTransfer.getData('text/shift-id');
-                      if (shiftId) await moveShift(shiftId, emp.id, dayIdx);
+                      if (shiftId) await moveShift(shiftId, emp.id, cellDate);
                     }}
                   >
                     <div className="flex flex-col gap-1 max-h-[60px] overflow-auto pr-0.5">
@@ -310,7 +310,7 @@ function DesktopGrid({ onAddShift, onEditShift, onDeleteShift }: ScheduleGridPro
                     <button
                       data-add-btn
                       className="block w-full border border-dashed border-[var(--color-border-strong)] text-[var(--color-muted)] rounded-md text-[11px] text-center py-[3px] mt-1 hover:border-[var(--color-accent)] hover:text-[var(--color-accent)] hover:bg-[var(--color-accent-subtle)] transition-all"
-                      onClick={(e) => { e.stopPropagation(); onAddShift(emp.id, dayIdx); }}
+                      onClick={(e) => { e.stopPropagation(); onAddShift(emp.id, cellDate); }}
                     >
                       +
                     </button>
@@ -329,7 +329,7 @@ function DesktopGrid({ onAddShift, onEditShift, onDeleteShift }: ScheduleGridPro
 // Mobile Day List
 // ──────────────────────────────
 function MobileDayList({ onAddShift, onEditShift, onDeleteShift }: ScheduleGridProps) {
-  const { employees, shifts, weekDates, getEmployeeById, conflictingShiftIds } = useSchedulerContext();
+  const { employees, currentWeekShifts, weekDates, weekOffset, getEmployeeById, conflictingShiftIds } = useSchedulerContext();
 
   if (employees.length === 0) {
     return <EmptyState />;
@@ -338,8 +338,9 @@ function MobileDayList({ onAddShift, onEditShift, onDeleteShift }: ScheduleGridP
   return (
     <div className="flex-1 w-full pb-20">
       {weekDates.map((date, dayIdx) => {
-        const dayShifts = shifts
-          .filter(s => s.day === dayIdx)
+        const iso = toISODate(date);
+        const dayShifts = currentWeekShifts
+          .filter(s => s.date === iso)
           .sort((a, b) => a.startTime.localeCompare(b.startTime));
         const dayHours = dayShifts.reduce((sum, s) => sum + calcHours(s.startTime, s.endTime), 0);
         const today = isToday(date);
@@ -377,7 +378,7 @@ function MobileDayList({ onAddShift, onEditShift, onDeleteShift }: ScheduleGridP
                 );
               })}
               <button
-                onClick={() => onAddShift(null, dayIdx)}
+                onClick={() => onAddShift(null, getDateForCell(weekOffset, dayIdx))}
                 className="w-full border border-dashed border-[var(--color-border-strong)] rounded-md py-2.5 text-[12px] text-[var(--color-muted)] hover:border-[var(--color-accent)] hover:text-[var(--color-accent)] hover:bg-[var(--color-accent-subtle)] transition-all"
               >
                 + Add shift

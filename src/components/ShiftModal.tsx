@@ -2,8 +2,9 @@
 
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { useSchedulerContext } from '@/context/SchedulerContext';
-import { DAY_FULL } from '@/lib/data/types';
+import { DAYS } from '@/lib/data/types';
 import { generateTimeOptions, calcHours } from '@/lib/utils/time';
+import { getDateForCell, parseISODate, dayIndexForDate } from '@/lib/utils/week';
 import Modal from './Modal';
 
 interface ShiftModalProps {
@@ -11,24 +12,45 @@ interface ShiftModalProps {
   onClose: () => void;
   editShiftId: string | null;
   prefillEmpId: string | null;
-  prefillDay: number | null;
+  /** ISO date string (YYYY-MM-DD) for the cell being added. */
+  prefillDate: string | null;
   onToast: (msg: string) => void;
   onDelete: (shiftId: string) => void | Promise<void>;
 }
 
-export default function ShiftModal({ isOpen, onClose, editShiftId, prefillEmpId, prefillDay, onToast, onDelete }: ShiftModalProps) {
-  const { employees, shifts, addShift, updateShift } = useSchedulerContext();
+export default function ShiftModal({ isOpen, onClose, editShiftId, prefillEmpId, prefillDate, onToast, onDelete }: ShiftModalProps) {
+  const { employees, shifts, weekOffset, weekDates, addShift, updateShift } = useSchedulerContext();
   const timeOptions = useMemo(() => generateTimeOptions(), []);
 
   const editShift = editShiftId ? shifts.find(s => s.id === editShiftId) : null;
 
-  // Lazy initializers so state starts correct on mount — no timing gap.
-  // Parent remounts this component via key= on every open, so initializers run fresh.
+  // Lazy initializers — parent remounts on every open via key=, so these run fresh.
   const [empId, setEmpId] = useState(() => editShift?.employeeId || prefillEmpId || employees[0]?.id || '');
-  const [day, setDay] = useState<number>(() => editShift?.day ?? prefillDay ?? 0);
+  const [date, setDate] = useState<string>(() =>
+    editShift?.date || prefillDate || getDateForCell(weekOffset, 0)
+  );
   const [startTime, setStartTime] = useState(() => editShift?.startTime || '09:00');
   const [endTime, setEndTime] = useState(() => editShift?.endTime || '17:00');
   const [note, setNote] = useState(() => editShift?.note || '');
+
+  // Build day options for the Day dropdown:
+  // - Current week's 7 dates, labeled "Mon Apr 13"
+  // - If editing a shift on a different week, ADD that date to the list
+  const dayOptions = useMemo(() => {
+    const opts: { value: string; label: string }[] = weekDates.map((d, i) => ({
+      value: getDateForCell(weekOffset, i),
+      label: `${DAYS[i]} ${d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`,
+    }));
+    if (date && !opts.some(o => o.value === date)) {
+      const parsed = parseISODate(date);
+      const di = dayIndexForDate(date);
+      opts.push({
+        value: date,
+        label: `${DAYS[di]} ${parsed.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} (other week)`,
+      });
+    }
+    return opts;
+  }, [weekDates, weekOffset, date]);
 
   const handleSave = async () => {
     if (!empId) return;
@@ -36,31 +58,25 @@ export default function ShiftModal({ isOpen, onClose, editShiftId, prefillEmpId,
       onToast('End time must be after start time');
       return;
     }
-
     if (editShiftId) {
-      await updateShift(editShiftId, { employeeId: empId, day, startTime, endTime, note });
+      await updateShift(editShiftId, { employeeId: empId, date, startTime, endTime, note });
       onToast('Shift updated');
     } else {
-      await addShift({ employeeId: empId, day, startTime, endTime, note });
+      await addShift({ employeeId: empId, date, startTime, endTime, note });
       onToast('Shift added');
     }
     onClose();
   };
 
-  // Keep handler ref fresh so the Enter listener below always sees current state
   const handleSaveRef = useRef(handleSave);
   handleSaveRef.current = handleSave;
 
-  // Enter submits from anywhere in the modal (except Cancel button), regardless of focus
   useEffect(() => {
     if (!isOpen) return;
     const handler = (e: KeyboardEvent) => {
       if (e.key !== 'Enter' || e.shiftKey) return;
       const t = e.target as HTMLElement | null;
-      // Let Enter on Cancel button / close button act as a click
-      if (t && t.tagName === 'BUTTON') return;
-      // Let textareas have newlines (none currently, but safety)
-      if (t && t.tagName === 'TEXTAREA') return;
+      if (t && (t.tagName === 'BUTTON' || t.tagName === 'TEXTAREA')) return;
       e.preventDefault();
       handleSaveRef.current();
     };
@@ -114,9 +130,9 @@ export default function ShiftModal({ isOpen, onClose, editShiftId, prefillEmpId,
 
         <div>
           <label className={labelCls}>Day</label>
-          <select className={inputCls} value={day} onChange={(e) => setDay(parseInt(e.target.value))}>
-            {DAY_FULL.map((d, i) => (
-              <option key={i} value={i}>{d}</option>
+          <select className={inputCls} value={date} onChange={(e) => setDate(e.target.value)}>
+            {dayOptions.map(o => (
+              <option key={o.value} value={o.value}>{o.label}</option>
             ))}
           </select>
         </div>
@@ -156,7 +172,6 @@ export default function ShiftModal({ isOpen, onClose, editShiftId, prefillEmpId,
             onChange={(e) => setNote(e.target.value)}
           />
         </div>
-        {/* Hidden submit so Enter key in any field submits the form */}
         <button type="submit" className="sr-only" aria-hidden="true" tabIndex={-1}>Save</button>
       </form>
     </Modal>

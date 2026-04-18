@@ -1,6 +1,6 @@
 import type { DataAdapter } from './adapter';
 import type { Employee, Shift, Template } from './types';
-import { SEED_EMPLOYEES, SEED_SHIFTS } from './seed';
+import { SEED_EMPLOYEES, buildSeedShifts } from './seed';
 
 const KEYS = {
   employees: 'shift_employees',
@@ -9,7 +9,9 @@ const KEYS = {
   version: 'shift_version',
 } as const;
 
-const CURRENT_VERSION = '1';
+// Bump version whenever the storage shape changes so the seed re-populates
+// with fresh data (old day-based shifts become invalid in v2 which uses dates).
+const CURRENT_VERSION = '2';
 
 function genId(): string {
   if (typeof crypto !== 'undefined' && crypto.randomUUID) {
@@ -38,12 +40,18 @@ function ensureSeeded(): void {
   const version = localStorage.getItem(KEYS.version);
   if (version === CURRENT_VERSION) return;
 
-  // Only seed if there's no existing data
+  // On version bump, clear old-shape data and reseed
+  if (version && version !== CURRENT_VERSION) {
+    localStorage.removeItem(KEYS.shifts);
+    // Keep employees + templates — employees is forward-compatible,
+    // templates still use day_of_week 0-6 which is stable.
+  }
+
   if (!localStorage.getItem(KEYS.employees)) {
     write(KEYS.employees, SEED_EMPLOYEES);
   }
   if (!localStorage.getItem(KEYS.shifts)) {
-    write(KEYS.shifts, SEED_SHIFTS);
+    write(KEYS.shifts, buildSeedShifts());
   }
   if (!localStorage.getItem(KEYS.templates)) {
     write(KEYS.templates, []);

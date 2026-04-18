@@ -27,7 +27,7 @@ interface SendResult {
 }
 
 export default function PublishModal({ isOpen, onClose, onToast }: PublishModalProps) {
-  const { employees, shifts, weekOffset } = useSchedulerContext();
+  const { employees, currentWeekShifts: shifts, weekOffset } = useSchedulerContext();
   const [phase, setPhase] = useState<Phase>('preview');
   const [results, setResults] = useState<SendResult[]>([]);
 

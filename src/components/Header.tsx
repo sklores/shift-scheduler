@@ -1,6 +1,7 @@
 'use client';
 
 import { useSchedulerContext } from '@/context/SchedulerContext';
+import { useAuth } from '@/context/AuthContext';
 
 interface HeaderProps {
   onOpenDrawer: () => void;
@@ -9,6 +10,7 @@ interface HeaderProps {
 
 export default function Header({ onOpenDrawer, onOpenPublish }: HeaderProps) {
   const { weekLabel, weekLabelCompact, changeWeek } = useSchedulerContext();
+  const { signOut } = useAuth();
 
   return (
     <header className="bg-[var(--color-text)] text-white px-3 sm:px-6 flex items-center gap-2 justify-between h-14 sticky top-0 z-50 shadow-sm w-full min-w-0">
@@ -57,6 +59,14 @@ export default function Header({ onOpenDrawer, onOpenPublish }: HeaderProps) {
         >
           <svg width="15" height="15" viewBox="0 0 13 13" fill="none" className="flex-shrink-0"><path d="M2 6.5L11 2L9 11L6.5 8L2 6.5Z" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round"/></svg>
           <span className="hidden sm:inline">Publish</span>
+        </button>
+        <button
+          onClick={signOut}
+          className="text-white/60 hover:text-white hover:bg-white/10 w-9 h-9 rounded-md flex items-center justify-center transition-all flex-shrink-0"
+          aria-label="Sign out"
+          title="Sign out"
+        >
+          <svg width="14" height="14" viewBox="0 0 15 15" fill="none"><path d="M6 4V3C6 2.45 6.45 2 7 2H11C11.55 2 12 2.45 12 3V12C12 12.55 11.55 13 11 13H7C6.45 13 6 12.55 6 12V11" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/><path d="M9 7.5H2M2 7.5L4 5.5M2 7.5L4 9.5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/></svg>
         </button>
       </div>
     </header>

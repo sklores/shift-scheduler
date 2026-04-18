@@ -9,9 +9,9 @@ function toMinutes(t: string): number {
   return h * 60 + m;
 }
 
-/** Returns true if two shift time ranges overlap (on the same day/employee — caller filters). */
+/** Returns true if two shift time ranges overlap (on the same date/employee — caller filters). */
 export function shiftsOverlap(a: Shift, b: Shift): boolean {
-  if (a.employeeId !== b.employeeId || a.day !== b.day) return false;
+  if (a.employeeId !== b.employeeId || a.date !== b.date) return false;
   const aStart = toMinutes(a.startTime);
   const aEnd = toMinutes(a.endTime);
   const bStart = toMinutes(b.startTime);

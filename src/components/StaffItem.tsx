@@ -15,9 +15,9 @@ function initials(name: string): string {
 }
 
 export default function StaffItem({ employee, onRemove }: StaffItemProps) {
-  const { shifts, employees, updateEmployee } = useSchedulerContext();
-  const weeklyHrs = employeeWeeklyHours(employee.id, shifts);
-  const weeklyCost = employeeWeeklyCost(employee.id, shifts, employees);
+  const { currentWeekShifts, employees, updateEmployee } = useSchedulerContext();
+  const weeklyHrs = employeeWeeklyHours(employee.id, currentWeekShifts);
+  const weeklyCost = employeeWeeklyCost(employee.id, currentWeekShifts, employees);
 
   return (
     <div className="border-b border-[var(--color-border)] px-5 py-3.5 hover:bg-[var(--color-surface-2)] transition-colors">

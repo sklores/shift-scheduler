@@ -13,9 +13,9 @@ interface ToolbarProps {
 }
 
 export default function Toolbar({ onAddShift, onClearWeek, onSaveTemplate, onApplyTemplate, onCopyWeek, onPasteWeek }: ToolbarProps) {
-  const { weekStats, weekClipboard, shifts } = useSchedulerContext();
+  const { weekStats, weekClipboard, currentWeekShifts } = useSchedulerContext();
   const hasClipboard = !!weekClipboard && weekClipboard.length > 0;
-  const canCopy = shifts.length > 0;
+  const canCopy = currentWeekShifts.length > 0;
 
   return (
     <div className="px-4 sm:px-6 py-3 border-b border-[var(--color-border)] bg-[var(--color-surface)] w-full min-w-0">
@@ -42,7 +42,7 @@ export default function Toolbar({ onAddShift, onClearWeek, onSaveTemplate, onApp
             onClick={onCopyWeek}
             disabled={!canCopy}
             className="text-[13px] font-medium px-3.5 py-2 rounded-lg bg-transparent text-[var(--color-text-2)] border border-[var(--color-border-strong)] hover:bg-[var(--color-bg)] hover:text-[var(--color-text)] transition-all flex-shrink-0 flex items-center gap-1.5 disabled:opacity-40 disabled:cursor-not-allowed"
-            title={canCopy ? `Copy ${shifts.length} shifts — then paste into any week` : 'Nothing to copy — week is empty'}
+            title={canCopy ? `Copy ${currentWeekShifts.length} shifts — then paste into any week` : 'Nothing to copy — week is empty'}
           >
             <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><rect x="3" y="3" width="7" height="8" rx="1" stroke="currentColor" strokeWidth="1.4"/><path d="M5 3V2C5 1.45 5.45 1 6 1H10C10.55 1 11 1.45 11 2V6" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/></svg>
             Copy Week

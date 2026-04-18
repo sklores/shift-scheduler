@@ -14,7 +14,8 @@ export interface Employee {
 export interface Shift {
   id: string;
   employeeId: string;
-  day: number; // 0=Mon, 1=Tue, ... 6=Sun
+  /** ISO date YYYY-MM-DD — a specific calendar day, not a weekday offset. */
+  date: string;
   startTime: string; // "HH:MM" 24h
   endTime: string;
   note: string;

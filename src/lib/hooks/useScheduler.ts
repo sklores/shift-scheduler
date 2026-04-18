@@ -6,11 +6,11 @@ import type { Employee, Shift, Template, WeekStats } from '../data/types';
 import { EMPLOYEE_COLORS } from '../data/types';
 import { calculateWeekStats } from '../utils/cost';
 import { findConflictingShiftIds } from '../utils/conflicts';
-import { getWeekDates, formatWeekLabel, formatWeekLabelCompact, formatWeekStartISO } from '../utils/week';
+import { getWeekDates, formatWeekLabel, formatWeekLabelCompact, formatWeekStartISO, getDateForCell, toISODate } from '../utils/week';
 
 interface WeekClipboardItem {
   employeeId: string;
-  day: number;
+  dayIdx: number; // index 0-6 within the COPIED week — gets re-projected onto paste week's actual dates
   startTime: string;
   endTime: string;
   note: string;
@@ -80,101 +80,75 @@ export function useScheduler(adapter: DataAdapter) {
     setShifts(prev => prev.filter(s => s.id !== id));
   }, [adapter]);
 
-  const moveShift = useCallback(async (id: string, newEmployeeId: string, newDay: number) => {
+  const moveShift = useCallback(async (id: string, newEmployeeId: string, newDate: string) => {
     const shift = shifts.find(s => s.id === id);
     if (!shift) return;
-    if (shift.employeeId === newEmployeeId && shift.day === newDay) return;
-    const updated = await adapter.updateShift(id, { employeeId: newEmployeeId, day: newDay });
+    if (shift.employeeId === newEmployeeId && shift.date === newDate) return;
+    const updated = await adapter.updateShift(id, { employeeId: newEmployeeId, date: newDate });
     setShifts(prev => prev.map(s => s.id === id ? updated : s));
   }, [adapter, shifts]);
 
-  const clearWeek = useCallback(async () => {
-    await adapter.clearAllShifts();
-    setShifts([]);
-  }, [adapter]);
+  // Week range helpers
+  const weekStart = useMemo(() => formatWeekStartISO(weekOffset), [weekOffset]);
+  const weekEnd = useMemo(() => {
+    const dates = getWeekDates(weekOffset);
+    return toISODate(dates[6]);
+  }, [weekOffset]);
 
-  // Snapshot current week's shifts into an in-memory clipboard (no IDs — pattern only)
+  // Only the displayed week's shifts — used by grid, stats, conflicts, etc.
+  const currentWeekShifts = useMemo(
+    () => shifts.filter(s => s.date >= weekStart && s.date <= weekEnd),
+    [shifts, weekStart, weekEnd]
+  );
+
+  const clearWeek = useCallback(async () => {
+    // Only delete the currently-displayed week
+    const toDelete = currentWeekShifts.map(s => s.id);
+    for (const id of toDelete) await adapter.removeShift(id);
+    setShifts(prev => prev.filter(s => !(s.date >= weekStart && s.date <= weekEnd)));
+  }, [adapter, currentWeekShifts, weekStart, weekEnd]);
+
+  // Snapshot displayed week's shifts by their day-index-within-week,
+  // so paste projects them onto whichever week the user is viewing when they paste.
   const copyWeek = useCallback(() => {
-    if (shifts.length === 0) return { copied: 0 };
-    const snapshot: WeekClipboardItem[] = shifts.map(s => ({
-      employeeId: s.employeeId,
-      day: s.day,
-      startTime: s.startTime,
-      endTime: s.endTime,
-      note: s.note,
-    }));
+    if (currentWeekShifts.length === 0) return { copied: 0 };
+    const snapshot: WeekClipboardItem[] = currentWeekShifts.map(s => {
+      const jsDay = new Date(s.date + 'T00:00:00').getDay(); // 0=Sun
+      const dayIdx = jsDay === 0 ? 6 : jsDay - 1;
+      return {
+        employeeId: s.employeeId,
+        dayIdx,
+        startTime: s.startTime,
+        endTime: s.endTime,
+        note: s.note,
+      };
+    });
     setWeekClipboard(snapshot);
     return { copied: snapshot.length };
-  }, [shifts]);
+  }, [currentWeekShifts]);
 
-  // Apply clipboard items to the current week, skipping duplicates by
-  // (employeeId, day, startTime, endTime). Clears clipboard after.
+  // Apply clipboard items to the currently-displayed week by projecting
+  // each item's dayIdx onto this week's actual date. Skip duplicates.
   const pasteWeek = useCallback(async () => {
     if (!weekClipboard || weekClipboard.length === 0) return { added: 0, skipped: 0 };
 
     const existingKeys = new Set(
-      shifts.map(s => `${s.employeeId}-${s.day}-${s.startTime}-${s.endTime}`)
+      currentWeekShifts.map(s => `${s.employeeId}-${s.date}-${s.startTime}-${s.endTime}`)
     );
     const validEmpIds = new Set(employees.map(e => e.id));
 
     let added = 0;
     let skipped = 0;
     for (const item of weekClipboard) {
-      const key = `${item.employeeId}-${item.day}-${item.startTime}-${item.endTime}`;
+      const date = getDateForCell(weekOffset, item.dayIdx);
+      const key = `${item.employeeId}-${date}-${item.startTime}-${item.endTime}`;
       if (existingKeys.has(key) || !validEmpIds.has(item.employeeId)) {
-        skipped++;
-        continue;
-      }
-      await adapter.addShift(item);
-      added++;
-    }
-
-    // Refresh shifts from adapter so new IDs are picked up
-    const updated = await adapter.getShifts();
-    setShifts(updated);
-    setWeekClipboard(null);
-    return { added, skipped };
-  }, [adapter, weekClipboard, shifts, employees]);
-
-  const clearWeekClipboard = useCallback(() => setWeekClipboard(null), []);
-
-  // --- Template actions ---
-  const saveTemplate = useCallback(async (name: string) => {
-    const template = await adapter.saveTemplate({
-      name,
-      createdAt: Date.now(),
-      updatedAt: Date.now(),
-      sourceWeekStart: formatWeekStartISO(weekOffset),
-      items: shifts.map(s => ({
-        employeeId: s.employeeId,
-        dayIndex: s.day,
-        startTime: s.startTime,
-        endTime: s.endTime,
-        note: s.note,
-      })),
-    });
-    setTemplates(prev => [...prev, template]);
-    return template;
-  }, [adapter, shifts, weekOffset]);
-
-  const applyTemplate = useCallback(async (templateId: string) => {
-    const tmpl = templates.find(t => t.id === templateId);
-    if (!tmpl) return { added: 0, skipped: 0 };
-
-    const existingKeys = new Set(shifts.map(s => `${s.employeeId}-${s.day}-${s.startTime}-${s.endTime}`));
-    let added = 0;
-    let skipped = 0;
-
-    for (const item of tmpl.items) {
-      const empExists = employees.some(e => e.id === item.employeeId);
-      const key = `${item.employeeId}-${item.dayIndex}-${item.startTime}-${item.endTime}`;
-      if (!empExists || existingKeys.has(key)) {
         skipped++;
         continue;
       }
       await adapter.addShift({
         employeeId: item.employeeId,
-        day: item.dayIndex,
+        date,
         startTime: item.startTime,
         endTime: item.endTime,
         note: item.note,
@@ -182,11 +156,70 @@ export function useScheduler(adapter: DataAdapter) {
       added++;
     }
 
-    // Reload shifts from adapter to get all new IDs
+    const updated = await adapter.getShifts();
+    setShifts(updated);
+    setWeekClipboard(null);
+    return { added, skipped };
+  }, [adapter, weekClipboard, currentWeekShifts, employees, weekOffset]);
+
+  const clearWeekClipboard = useCallback(() => setWeekClipboard(null), []);
+
+  // --- Template actions ---
+  // Templates store day-of-week (0-6) because they're reusable across weeks.
+  const saveTemplate = useCallback(async (name: string) => {
+    const template = await adapter.saveTemplate({
+      name,
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+      sourceWeekStart: formatWeekStartISO(weekOffset),
+      items: currentWeekShifts.map(s => {
+        const jsDay = new Date(s.date + 'T00:00:00').getDay();
+        const dayIdx = jsDay === 0 ? 6 : jsDay - 1;
+        return {
+          employeeId: s.employeeId,
+          dayIndex: dayIdx,
+          startTime: s.startTime,
+          endTime: s.endTime,
+          note: s.note,
+        };
+      }),
+    });
+    setTemplates(prev => [...prev, template]);
+    return template;
+  }, [adapter, currentWeekShifts, weekOffset]);
+
+  const applyTemplate = useCallback(async (templateId: string) => {
+    const tmpl = templates.find(t => t.id === templateId);
+    if (!tmpl) return { added: 0, skipped: 0 };
+
+    const existingKeys = new Set(
+      currentWeekShifts.map(s => `${s.employeeId}-${s.date}-${s.startTime}-${s.endTime}`)
+    );
+    let added = 0;
+    let skipped = 0;
+
+    for (const item of tmpl.items) {
+      const date = getDateForCell(weekOffset, item.dayIndex);
+      const empExists = employees.some(e => e.id === item.employeeId);
+      const key = `${item.employeeId}-${date}-${item.startTime}-${item.endTime}`;
+      if (!empExists || existingKeys.has(key)) {
+        skipped++;
+        continue;
+      }
+      await adapter.addShift({
+        employeeId: item.employeeId,
+        date,
+        startTime: item.startTime,
+        endTime: item.endTime,
+        note: item.note,
+      });
+      added++;
+    }
+
     const updatedShifts = await adapter.getShifts();
     setShifts(updatedShifts);
     return { added, skipped };
-  }, [adapter, templates, shifts, employees]);
+  }, [adapter, templates, currentWeekShifts, employees, weekOffset]);
 
   const renameTemplate = useCallback(async (id: string, name: string) => {
     const tmpl = await adapter.updateTemplate(id, { name, updatedAt: Date.now() });
@@ -204,14 +237,16 @@ export function useScheduler(adapter: DataAdapter) {
   }, []);
 
   // --- Computed ---
-  const weekStats: WeekStats = useMemo(() => calculateWeekStats(shifts, employees), [shifts, employees]);
-  const conflictingShiftIds = useMemo(() => findConflictingShiftIds(shifts), [shifts]);
+  // Stats + conflicts are scoped to the CURRENTLY DISPLAYED week.
+  const weekStats: WeekStats = useMemo(() => calculateWeekStats(currentWeekShifts, employees), [currentWeekShifts, employees]);
+  const conflictingShiftIds = useMemo(() => findConflictingShiftIds(currentWeekShifts), [currentWeekShifts]);
   const weekLabel = useMemo(() => formatWeekLabel(weekOffset), [weekOffset]);
   const weekLabelCompact = useMemo(() => formatWeekLabelCompact(weekOffset), [weekOffset]);
   const weekDates = useMemo(() => getWeekDates(weekOffset), [weekOffset]);
 
-  const getShiftsForCell = useCallback((empId: string, day: number): Shift[] => {
-    return shifts.filter(s => s.employeeId === empId && s.day === day);
+  /** Fetch shifts for a cell by its exact ISO date. */
+  const getShiftsForCell = useCallback((empId: string, date: string): Shift[] => {
+    return shifts.filter(s => s.employeeId === empId && s.date === date);
   }, [shifts]);
 
   const getEmployeeById = useCallback((id: string): Employee | undefined => {
@@ -226,8 +261,11 @@ export function useScheduler(adapter: DataAdapter) {
     // State
     employees,
     shifts,
+    currentWeekShifts,
     templates,
     weekOffset,
+    weekStart,
+    weekEnd,
     isLoading,
 
     // Employee actions

@@ -1,6 +1,6 @@
 import type { Employee, Shift } from '../data/types';
 import { DAYS } from '../data/types';
-import { getWeekStart } from './week';
+import { getWeekStart, formatWeekStartISO, dayIndexForDate } from './week';
 import { cleanPhone } from './phone';
 
 function shortTime(t: string): string {
@@ -11,17 +11,21 @@ function shortTime(t: string): string {
 
 export function buildScheduleMessage(emp: Employee, empShifts: Shift[], weekOffset: number): string {
   const ws = getWeekStart(weekOffset);
+  const weekStartISO = formatWeekStartISO(weekOffset);
+  const weekEndDate = new Date(ws); weekEndDate.setDate(ws.getDate() + 6);
+  const weekEndISO = `${weekEndDate.getFullYear()}-${String(weekEndDate.getMonth() + 1).padStart(2, '0')}-${String(weekEndDate.getDate()).padStart(2, '0')}`;
   const headerDate = `${DAYS[0]} ${ws.getMonth() + 1}/${ws.getDate()}`;
 
+  // Only include shifts for this employee in the displayed week
   const sorted = [...empShifts]
-    .filter(s => s.employeeId === emp.id)
-    .sort((a, b) => a.day - b.day || a.startTime.localeCompare(b.startTime));
+    .filter(s => s.employeeId === emp.id && s.date >= weekStartISO && s.date <= weekEndISO)
+    .sort((a, b) => a.date.localeCompare(b.date) || a.startTime.localeCompare(b.startTime));
 
   if (!sorted.length) {
     return `Schedule (${headerDate}):\nNo shifts this week.\nReply STOP to opt out.`;
   }
 
-  const lines = sorted.map(s => `${DAYS[s.day]} ${shortTime(s.startTime)}–${shortTime(s.endTime)}`);
+  const lines = sorted.map(s => `${DAYS[dayIndexForDate(s.date)]} ${shortTime(s.startTime)}–${shortTime(s.endTime)}`);
   return `Schedule (${headerDate}):\n${lines.join('\n')}\nReply STOP to opt out.`;
 }
 

@@ -16,9 +16,10 @@ import Toast from './Toast';
 import ConfirmDialog from './ConfirmDialog';
 import CheatSheet from './CheatSheet';
 import LaborBreakdownBar from './LaborBreakdownBar';
+import MigrationBanner from './MigrationBanner';
 
 export default function Scheduler() {
-  const { isLoading, clearWeek, shifts, deleteShift, copyWeek, pasteWeek } = useSchedulerContext();
+  const { isLoading, clearWeek, currentWeekShifts, deleteShift, copyWeek, pasteWeek } = useSchedulerContext();
   const toast = useToast();
   const confirm = useConfirm();
 
@@ -27,7 +28,7 @@ export default function Scheduler() {
   const [isShiftModalOpen, setShiftModalOpen] = useState(false);
   const [editShiftId, setEditShiftId] = useState<string | null>(null);
   const [prefillEmpId, setPrefillEmpId] = useState<string | null>(null);
-  const [prefillDay, setPrefillDay] = useState<number | null>(null);
+  const [prefillDate, setPrefillDate] = useState<string | null>(null);
   // Bump this every time we open the shift modal so React remounts it with
   // fresh lazy-init state — prevents state-reset timing bugs when user hits
   // Enter rapidly after opening.
@@ -38,10 +39,10 @@ export default function Scheduler() {
   const [isApplyTemplateOpen, setApplyTemplateOpen] = useState(false);
   const [isCheatSheetOpen, setCheatSheetOpen] = useState(false);
 
-  const handleAddShift = useCallback((empId: string | null = null, day: number | null = null) => {
+  const handleAddShift = useCallback((empId: string | null = null, date: string | null = null) => {
     setEditShiftId(null);
     setPrefillEmpId(empId);
-    setPrefillDay(day);
+    setPrefillDate(date);
     setShiftModalKey(k => k + 1);
     setShiftModalOpen(true);
   }, []);
@@ -49,7 +50,7 @@ export default function Scheduler() {
   const handleEditShift = useCallback((shiftId: string) => {
     setEditShiftId(shiftId);
     setPrefillEmpId(null);
-    setPrefillDay(null);
+    setPrefillDate(null);
     setShiftModalKey(k => k + 1);
     setShiftModalOpen(true);
   }, []);
@@ -67,28 +68,28 @@ export default function Scheduler() {
   }, [deleteShift, toast, confirm]);
 
   const handleClearWeek = useCallback(async () => {
-    if (!shifts.length) {
-      toast.show('No shifts to clear');
+    if (!currentWeekShifts.length) {
+      toast.show('No shifts this week to clear');
       return;
     }
     const ok = await confirm.ask({
-      title: 'Clear all shifts?',
-      message: `This will remove all ${shifts.length} shifts from this week. You'll need to rebuild the schedule.`,
+      title: 'Clear this week?',
+      message: `This will remove all ${currentWeekShifts.length} shifts from the currently displayed week.`,
       confirmLabel: 'Clear Week',
       destructive: true,
     });
     if (!ok) return;
     await clearWeek();
     toast.show('Week cleared');
-  }, [shifts.length, clearWeek, toast, confirm]);
+  }, [currentWeekShifts.length, clearWeek, toast, confirm]);
 
   const handlePublish = useCallback(() => {
-    if (!shifts.length) {
-      toast.show('No shifts scheduled yet');
+    if (!currentWeekShifts.length) {
+      toast.show('No shifts this week to publish');
       return;
     }
     setPublishOpen(true);
-  }, [shifts.length, toast]);
+  }, [currentWeekShifts.length, toast]);
 
   const handleCopyWeek = useCallback(() => {
     const r = copyWeek();
@@ -135,14 +136,14 @@ export default function Scheduler() {
       // Cmd/Ctrl + Shift + P → Publish
       if ((e.metaKey || e.ctrlKey) && e.shiftKey && (e.key === 'p' || e.key === 'P')) {
         e.preventDefault();
-        if (shifts.length) setPublishOpen(true);
-        else toast.show('No shifts scheduled yet');
+        if (currentWeekShifts.length) setPublishOpen(true);
+        else toast.show('No shifts this week to publish');
         return;
       }
     };
     document.addEventListener('keydown', handler);
     return () => document.removeEventListener('keydown', handler);
-  }, [shifts.length, toast]);
+  }, [currentWeekShifts.length, toast]);
 
   if (isLoading) {
     return (
@@ -158,6 +159,7 @@ export default function Scheduler() {
         onOpenDrawer={() => setDrawerOpen(true)}
         onOpenPublish={handlePublish}
       />
+      <MigrationBanner />
       <Toolbar
         onAddShift={() => handleAddShift()}
         onClearWeek={handleClearWeek}
@@ -187,7 +189,7 @@ export default function Scheduler() {
         onClose={() => setShiftModalOpen(false)}
         editShiftId={editShiftId}
         prefillEmpId={prefillEmpId}
-        prefillDay={prefillDay}
+        prefillDate={prefillDate}
         onToast={toast.show}
         onDelete={handleDeleteShift}
       />

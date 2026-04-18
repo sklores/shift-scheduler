@@ -45,9 +45,33 @@ export function isToday(date: Date): boolean {
 }
 
 export function formatWeekStartISO(offset: number = 0): string {
-  const d = getWeekStart(offset);
+  return toISODate(getWeekStart(offset));
+}
+
+/** Format a Date as YYYY-MM-DD in local time (not UTC — matters for month boundaries). */
+export function toISODate(d: Date): string {
   const y = d.getFullYear();
   const m = String(d.getMonth() + 1).padStart(2, '0');
   const day = String(d.getDate()).padStart(2, '0');
   return `${y}-${m}-${day}`;
+}
+
+/** Given a week offset and a day index (0=Mon…6=Sun), return the ISO date string. */
+export function getDateForCell(weekOffset: number, dayIdx: number): string {
+  const start = getWeekStart(weekOffset);
+  const d = new Date(start);
+  d.setDate(start.getDate() + dayIdx);
+  return toISODate(d);
+}
+
+/** Parse YYYY-MM-DD to a local Date (midnight local time). */
+export function parseISODate(iso: string): Date {
+  const [y, m, d] = iso.split('-').map(Number);
+  return new Date(y, m - 1, d);
+}
+
+/** Day-of-week index for an ISO date (0=Mon…6=Sun). */
+export function dayIndexForDate(iso: string): number {
+  const jsDay = parseISODate(iso).getDay(); // 0=Sun
+  return jsDay === 0 ? 6 : jsDay - 1;
 }
