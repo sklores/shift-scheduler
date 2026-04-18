@@ -68,20 +68,8 @@ export default function Toolbar({ onAddShift, onClearWeek, onSaveTemplate, onApp
           Clear Week
         </button>
 
-        {/* Keyboard hint — desktop only */}
-        <div className="hidden lg:flex ml-auto items-center gap-1.5 text-[11px] text-[var(--color-muted)] mr-3 font-mono whitespace-nowrap">
-          <Kbd>↑↓←→</Kbd>
-          <span>move</span>
-          <Kbd>Enter</Kbd>
-          <span>add</span>
-          <Kbd>C</Kbd><Kbd>V</Kbd>
-          <span>copy·paste</span>
-          <Kbd>?</Kbd>
-          <span>all</span>
-        </div>
-
         {/* Stats — desktop */}
-        <div className="hidden md:flex lg:ml-0 ml-auto gap-2">
+        <div className="hidden md:flex ml-auto gap-2">
           <CostStat labor={weekStats.totalCost} />
           <Stat label="Hours" value={`${weekStats.totalHours.toFixed(0)}h`} />
           <Stat label="Shifts" value={String(weekStats.totalShifts)} />
@@ -95,14 +83,6 @@ export default function Toolbar({ onAddShift, onClearWeek, onSaveTemplate, onApp
         <Stat label="Shifts" value={String(weekStats.totalShifts)} fill />
       </div>
     </div>
-  );
-}
-
-function Kbd({ children }: { children: React.ReactNode }) {
-  return (
-    <kbd className="inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded border border-[var(--color-border-strong)] bg-[var(--color-surface-2)] text-[var(--color-text-2)] font-mono text-[10.5px] leading-none">
-      {children}
-    </kbd>
   );
 }
 

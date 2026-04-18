@@ -15,6 +15,7 @@ import ApplyTemplateModal from './ApplyTemplateModal';
 import Toast from './Toast';
 import ConfirmDialog from './ConfirmDialog';
 import CheatSheet from './CheatSheet';
+import LaborBreakdownBar from './LaborBreakdownBar';
 
 export default function Scheduler() {
   const { isLoading, clearWeek, shifts, deleteShift, copyWeek, pasteWeek } = useSchedulerContext();
@@ -172,6 +173,7 @@ export default function Scheduler() {
           onDeleteShift={handleDeleteShift}
         />
       </div>
+      <LaborBreakdownBar />
 
       <StaffDrawer
         isOpen={isDrawerOpen}
