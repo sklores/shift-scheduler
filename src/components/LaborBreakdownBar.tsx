@@ -16,7 +16,7 @@ function readNumber(key: string): number {
 }
 
 export default function LaborBreakdownBar() {
-  const { currentWeekShifts, employees } = useSchedulerContext();
+  const { currentWeekShifts, employees, weekStats } = useSchedulerContext();
 
   // User-entered pools (persisted in localStorage)
   const [salary, setSalary] = useState<number>(0);
@@ -66,6 +66,7 @@ export default function LaborBreakdownBar() {
         <Card label="Payroll Tax" value={formatCurrency(b.tax)} sublabel={`~${pct}% of subtotal`} />
         <div className="flex items-center px-1 text-[var(--color-muted)] text-lg font-light flex-shrink-0" aria-hidden>=</div>
         <Card label="Total" value={formatCurrency(b.total)} sublabel="All-in weekly" big />
+        <Card label="Total Hours" value={`${weekStats.totalHours.toFixed(0)}h`} sublabel={`${weekStats.totalShifts} shift${weekStats.totalShifts !== 1 ? 's' : ''}`} />
       </div>
     </div>
   );
