@@ -6,8 +6,12 @@ import { PAYROLL_TAX_RATE } from './cost';
 export interface LaborBreakdown {
   /** Regular hourly wages: hours up to 40/wk × rate, for all hourly employees */
   hourly: number;
+  /** Total regular hours (≤40/wk per employee) across all hourly staff */
+  hourlyHours: number;
   /** Overtime: hours over 40/wk × rate × 1.5 */
   overtime: number;
+  /** Total OT hours (>40/wk per employee) across all hourly staff */
+  overtimeHours: number;
   /** Weekly salary pool (user input; not tied to shifts today) */
   salary: number;
   /** Weekly tips pool (user input; informational only) */
@@ -38,6 +42,8 @@ export function computeLaborBreakdown(
 ): LaborBreakdown {
   let hourly = 0;
   let overtime = 0;
+  let hourlyHours = 0;
+  let overtimeHours = 0;
 
   for (const emp of employees) {
     const empHours = shifts
@@ -49,6 +55,8 @@ export function computeLaborBreakdown(
 
     hourly += regHours * emp.hourlyRate;
     overtime += otHours * emp.hourlyRate * 1.5;
+    hourlyHours += regHours;
+    overtimeHours += otHours;
   }
 
   const salary = Math.max(0, weeklySalaryTotal || 0);
@@ -57,5 +65,5 @@ export function computeLaborBreakdown(
   const tax = subtotal * PAYROLL_TAX_RATE;
   const total = subtotal + tax;
 
-  return { hourly, overtime, salary, tips, subtotal, tax, total };
+  return { hourly, hourlyHours, overtime, overtimeHours, salary, tips, subtotal, tax, total };
 }

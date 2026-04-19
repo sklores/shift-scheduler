@@ -49,14 +49,25 @@ export default function LaborBreakdownBar() {
   return (
     <div className="border-t border-[var(--color-border)] bg-[var(--color-surface)] px-4 sm:px-6 py-4 flex-shrink-0">
       <div className="flex items-stretch gap-2 overflow-x-auto scrollbar-hide -mx-4 sm:-mx-6 px-4 sm:px-6">
-        <Card label="Hourly" value={formatCurrency(b.hourly)} sublabel="Regular ≤40h" />
+        <Card
+          label="Hourly"
+          value={formatCurrency(b.hourly)}
+          sublabel={`${b.hourlyHours.toFixed(0)}h regular`}
+        />
         <EditableCard
           label="Salary"
           value={salary}
           onChange={setSalary}
           sublabel="Weekly pool"
         />
-        <Card label="Overtime" value={formatCurrency(b.overtime)} sublabel="Hours >40 at 1.5×" warn={b.overtime > 0} />
+        <Card
+          label="Overtime"
+          value={formatCurrency(b.overtime)}
+          sublabel={b.overtimeHours > 0
+            ? `${b.overtimeHours.toFixed(0)}h at 1.5×`
+            : '0h — no OT'}
+          warn={b.overtime > 0}
+        />
         <EditableCard
           label="Tips"
           value={tips}
