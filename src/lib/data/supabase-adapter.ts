@@ -313,7 +313,7 @@ export class SupabaseAdapter implements DataAdapter {
         employee_id: block.employeeId,
         starts_on: block.startsOn,
         ends_on: block.endsOn,
-        reason: block.reason || null,
+        reason: block.reason ?? '',
       })
       .select()
       .single();

@@ -20,6 +20,7 @@ interface ShiftModalProps {
 
 export default function ShiftModal({ isOpen, onClose, editShiftId, prefillEmpId, prefillDate, onToast, onDelete }: ShiftModalProps) {
   const { employees, shifts, weekOffset, weekDates, addShift, updateShift, addAvailabilityBlock } = useSchedulerContext();
+  const [markingUnavailable, setMarkingUnavailable] = useState(false);
   const timeOptions = useMemo(() => generateTimeOptions(), []);
 
   const editShift = editShiftId ? shifts.find(s => s.id === editShiftId) : null;
@@ -105,14 +106,25 @@ export default function ShiftModal({ isOpen, onClose, editShiftId, prefillEmpId,
             </button>
           ) : (
             <button
+              disabled={markingUnavailable || !empId}
               onClick={async () => {
                 if (!empId) return;
-                await addAvailabilityBlock({ employeeId: empId, startsOn: date, endsOn: date, reason: '' });
-                onToast('Marked unavailable');
-                onClose();
+                setMarkingUnavailable(true);
+                try {
+                  await addAvailabilityBlock({ employeeId: empId, startsOn: date, endsOn: date, reason: '' });
+                  onToast('Marked unavailable');
+                  onClose();
+                } catch (err) {
+                  onToast(`Error: ${(err as Error).message}`);
+                } finally {
+                  setMarkingUnavailable(false);
+                }
               }}
-              className="text-[13px] font-medium px-4 py-2 rounded-lg bg-[#1F1B16] text-white border border-[#1F1B16] hover:opacity-80 transition-all"
+              className="text-[13px] font-medium px-4 py-2 rounded-lg bg-[#1F1B16] text-white border border-[#1F1B16] hover:opacity-80 transition-all disabled:opacity-50 flex items-center gap-1.5"
             >
+              {markingUnavailable && (
+                <span className="inline-block w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+              )}
               Unavailable
             </button>
           )}
