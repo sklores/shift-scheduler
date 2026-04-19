@@ -2,7 +2,7 @@
 
 import { useRef, useState } from 'react';
 import { useSchedulerContext } from '@/context/SchedulerContext';
-import { formatCurrency, estimatedTax, laborPlusTax, PAYROLL_TAX_RATE } from '@/lib/utils/cost';
+import { formatCurrency } from '@/lib/utils/cost';
 
 interface ToolbarProps {
   onAddShift: () => void;
@@ -158,20 +158,13 @@ function Stat({ label, value, accent = false, fill = false }: { label: string; v
 }
 
 function CostStat({ labor, fill = false }: { labor: number; fill?: boolean }) {
-  const tax = estimatedTax(labor);
-  const total = laborPlusTax(labor);
-  const pct = Math.round(PAYROLL_TAX_RATE * 100);
-
   return (
-    <div
-      className={`px-3 py-1.5 rounded-lg bg-[var(--color-surface-2)] ${fill ? 'flex-1' : ''}`}
-      title={`${formatCurrency(labor)} labor + ${formatCurrency(tax)} est. tax (${pct}%)`}
-    >
+    <div className={`px-3 py-1.5 rounded-lg bg-[var(--color-surface-2)] ${fill ? 'flex-1' : ''}`}>
       <div className="font-mono text-[15px] font-semibold leading-tight text-[var(--color-accent)]">
-        {formatCurrency(total)}
+        {formatCurrency(labor)}
       </div>
       <div className="text-[10px] text-[var(--color-muted)] uppercase tracking-wider mt-0.5 whitespace-nowrap">
-        Total · incl. {pct}% tax
+        Payroll
       </div>
     </div>
   );
