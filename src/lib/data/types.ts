@@ -54,10 +54,10 @@ export interface WeekStats {
 
 // Restaurant vibe. Rich & distinct at a glance — all dark enough for white text.
 export const ROLE_COLORS: Record<EmployeeRole, string> = {
-  manager: '#a02843', // wine / burgundy — authority
+  manager: '#1d4ed8', // royal blue — authority
   server:  '#0e7490', // ocean teal — front of house
   cashier: '#15803d', // cash green
-  cook:    '#c2410c', // paprika — kitchen heat
+  cook:    '#a02843', // wine / burgundy — kitchen authority
   host:    '#7c3aed', // vivid plum — welcoming
   barista: '#6b3e18', // espresso brown
 };

@@ -21,10 +21,10 @@ const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
 // Role colors — match app exactly
 const ROLE_COLORS: Record<string, string> = {
-  manager: '#a02843',
+  manager: '#1d4ed8',
   server:  '#0e7490',
   cashier: '#15803d',
-  cook:    '#c2410c',
+  cook:    '#a02843',
   host:    '#7c3aed',
   barista: '#6b3e18',
 };
