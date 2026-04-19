@@ -28,18 +28,24 @@ function errorResponse(status: number, message: string) {
 
 function buildHtml(name: string, body: string): string {
   // Parse into header line + day blocks separated by blank lines
-  const [headerLine, ...rest] = body.split('\n\n');
-  const dayBlocks = rest.map(block => {
-    const [dayName, ...times] = block.split('\n');
-    const timeRows = times.map(t =>
-      `<p style="margin:2px 0 0 0;font-family:'Courier New',monospace;font-size:15px;font-weight:700;color:#111">${t}</p>`
-    ).join('');
-    return `
-      <div style="margin-bottom:20px">
-        <p style="margin:0 0 4px 0;font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:#888">${dayName}</p>
-        ${timeRows}
-      </div>`;
-  }).join('');
+  const parts = body.split('\n\n');
+  const headerLine = parts[0] ?? '';
+  const rest = parts.slice(1);
+
+  // If no day blocks parsed (unexpected format), fall back to plain lines
+  const dayBlocks = rest.length > 0
+    ? rest.map(block => {
+        const [dayName, ...times] = block.split('\n');
+        const timeRows = times.map(t =>
+          `<p style="margin:2px 0 0 0;font-family:'Courier New',monospace;font-size:15px;font-weight:700;color:#111">${t}</p>`
+        ).join('');
+        return `
+        <div style="margin-bottom:20px">
+          <p style="margin:0 0 4px 0;font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:#888">${dayName}</p>
+          ${timeRows}
+        </div>`;
+      }).join('')
+    : `<p style="font-family:'Courier New',monospace;font-size:13px;color:#333;white-space:pre-line">${headerLine}</p>`;
 
   return `
 <!DOCTYPE html>
