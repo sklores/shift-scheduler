@@ -194,6 +194,19 @@ export function useScheduler(adapter: DataAdapter) {
 
   // --- Template actions ---
   // Templates store day-of-week (0-6) because they're reusable across weeks.
+  /** Save a template from an externally-provided items array (e.g. OCR upload). */
+  const saveTemplateFromItems = useCallback(async (name: string, items: import('../data/types').TemplateItem[]) => {
+    const template = await adapter.saveTemplate({
+      name,
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+      sourceWeekStart: '',
+      items,
+    });
+    setTemplates(prev => [...prev, template]);
+    return template;
+  }, [adapter]);
+
   const saveTemplate = useCallback(async (name: string) => {
     const template = await adapter.saveTemplate({
       name,
@@ -342,6 +355,7 @@ export function useScheduler(adapter: DataAdapter) {
 
     // Template actions
     saveTemplate,
+    saveTemplateFromItems,
     applyTemplate,
     renameTemplate,
     deleteTemplate,

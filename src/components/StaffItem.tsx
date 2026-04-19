@@ -1,12 +1,10 @@
 'use client';
 
-import { useState } from 'react';
 import type { Employee } from '@/lib/data/types';
 import { ROLE_COLORS } from '@/lib/data/types';
 import { employeeWeeklyHours, employeeWeeklyCost, formatCurrency } from '@/lib/utils/cost';
 import { isOvertime, OT_THRESHOLD_HOURS } from '@/lib/utils/conflicts';
 import { useSchedulerContext } from '@/context/SchedulerContext';
-import AvailabilityModal from './AvailabilityModal';
 
 interface StaffItemProps {
   employee: Employee;
@@ -18,26 +16,12 @@ function initials(name: string): string {
   return name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
 }
 
-export default function StaffItem({ employee, onRemove, onToast }: StaffItemProps) {
-  const { currentWeekShifts, employees, updateEmployee, getBlocksForEmployee } = useSchedulerContext();
+export default function StaffItem({ employee, onRemove }: StaffItemProps) {
+  const { currentWeekShifts, employees, updateEmployee } = useSchedulerContext();
   const weeklyHrs = employeeWeeklyHours(employee.id, currentWeekShifts);
   const weeklyCost = employeeWeeklyCost(employee.id, currentWeekShifts, employees);
-  const [isAvailOpen, setAvailOpen] = useState(false);
-
-  const blocks = getBlocksForEmployee(employee.id);
-  const today = new Date().toISOString().slice(0, 10);
-  const upcomingBlocks = blocks.filter(b => b.endsOn >= today)
-    .sort((a, b) => a.startsOn.localeCompare(b.startsOn))
-    .slice(0, 3);
-
-  function fmtBlock(iso: string) {
-    const [, m, d] = iso.split('-').map(Number);
-    const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-    return `${months[m - 1]} ${d}`;
-  }
 
   return (
-    <>
     <div className="border-b border-[var(--color-border)] px-5 py-3.5 hover:bg-[var(--color-surface-2)] transition-colors">
       <div className="flex items-center gap-3">
         <div
@@ -51,7 +35,7 @@ export default function StaffItem({ employee, onRemove, onToast }: StaffItemProp
           <div className="text-[11.5px] text-[var(--color-muted)] capitalize">{employee.role}</div>
         </div>
 
-        {/* Rate input — inline */}
+        {/* Rate input */}
         <div className="flex items-center gap-1 flex-shrink-0">
           <span className="font-mono text-[11px] text-[var(--color-muted)]">$</span>
           <input
@@ -69,8 +53,10 @@ export default function StaffItem({ employee, onRemove, onToast }: StaffItemProp
           <div className="font-mono text-[14px] font-semibold text-[var(--color-accent)]">
             {formatCurrency(weeklyCost)}
           </div>
-          <div className={`text-[10px] uppercase tracking-wider font-mono flex items-center justify-end gap-1 ${isOvertime(weeklyHrs) ? 'text-[var(--color-warn)] font-semibold' : 'text-[var(--color-muted)]'}`}
-               title={isOvertime(weeklyHrs) ? `${(weeklyHrs - OT_THRESHOLD_HOURS).toFixed(0)}h over 40` : undefined}>
+          <div
+            className={`text-[10px] uppercase tracking-wider font-mono flex items-center justify-end gap-1 ${isOvertime(weeklyHrs) ? 'text-[var(--color-warn)] font-semibold' : 'text-[var(--color-muted)]'}`}
+            title={isOvertime(weeklyHrs) ? `${(weeklyHrs - OT_THRESHOLD_HOURS).toFixed(0)}h over 40` : undefined}
+          >
             {isOvertime(weeklyHrs) && <span aria-label="Overtime">&#9888;</span>}
             <span>{weeklyHrs.toFixed(0)}h/wk</span>
           </div>
@@ -82,31 +68,6 @@ export default function StaffItem({ employee, onRemove, onToast }: StaffItemProp
           aria-label="Remove"
         >
           &times;
-        </button>
-      </div>
-
-      {/* Availability row */}
-      <div className="flex items-center gap-2 mt-2.5 pt-2.5 border-t border-dashed border-[var(--color-border)]">
-        <svg width="13" height="13" viewBox="0 0 13 13" fill="none" className="text-[var(--color-muted)] flex-shrink-0"><rect x="1" y="2" width="11" height="10" rx="1.5" stroke="currentColor" strokeWidth="1.2"/><path d="M1 5H12" stroke="currentColor" strokeWidth="1.2"/><path d="M4 1V3M9 1V3" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/></svg>
-        <div className="flex-1 flex items-center gap-1.5 flex-wrap min-w-0">
-          {upcomingBlocks.length === 0 ? (
-            <span className="text-[11px] text-[var(--color-muted)]">No blocks set</span>
-          ) : (
-            upcomingBlocks.map(b => (
-              <span key={b.id} className="inline-flex items-center text-[10.5px] font-mono bg-[var(--color-warn-light)] text-[var(--color-warn)] px-1.5 py-0.5 rounded font-medium">
-                {b.startsOn === b.endsOn ? fmtBlock(b.startsOn) : `${fmtBlock(b.startsOn)}–${fmtBlock(b.endsOn)}`}
-              </span>
-            ))
-          )}
-          {blocks.filter(b => b.endsOn >= today).length > 3 && (
-            <span className="text-[10px] text-[var(--color-muted)]">+{blocks.filter(b => b.endsOn >= today).length - 3} more</span>
-          )}
-        </div>
-        <button
-          onClick={() => setAvailOpen(true)}
-          className="text-[10.5px] font-medium text-[var(--color-muted)] hover:text-[var(--color-text)] border border-[var(--color-border-strong)] rounded px-1.5 py-0.5 hover:bg-[var(--color-bg)] transition-all flex-shrink-0"
-        >
-          Edit
         </button>
       </div>
 
@@ -125,15 +86,5 @@ export default function StaffItem({ employee, onRemove, onToast }: StaffItemProp
         </span>
       </div>
     </div>
-
-    {isAvailOpen && (
-      <AvailabilityModal
-        employee={employee}
-        isOpen={isAvailOpen}
-        onClose={() => setAvailOpen(false)}
-        onToast={onToast}
-      />
-    )}
-    </>
   );
 }

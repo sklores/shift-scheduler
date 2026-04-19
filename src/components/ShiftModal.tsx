@@ -19,7 +19,7 @@ interface ShiftModalProps {
 }
 
 export default function ShiftModal({ isOpen, onClose, editShiftId, prefillEmpId, prefillDate, onToast, onDelete }: ShiftModalProps) {
-  const { employees, shifts, weekOffset, weekDates, addShift, updateShift } = useSchedulerContext();
+  const { employees, shifts, weekOffset, weekDates, addShift, updateShift, addAvailabilityBlock } = useSchedulerContext();
   const timeOptions = useMemo(() => generateTimeOptions(), []);
 
   const editShift = editShiftId ? shifts.find(s => s.id === editShiftId) : null;
@@ -96,12 +96,24 @@ export default function ShiftModal({ isOpen, onClose, editShiftId, prefillEmpId,
       width="max-w-md"
       footer={
         <div className="flex w-full items-center gap-2.5">
-          {editShiftId && (
+          {editShiftId ? (
             <button
               onClick={() => { if (editShiftId) { onDelete(editShiftId); onClose(); } }}
               className="text-[13px] font-medium px-4 py-2 rounded-lg bg-white text-[var(--color-accent)] border border-[var(--color-accent)]/40 hover:bg-[var(--color-accent-subtle)] hover:border-[var(--color-accent)] transition-all"
             >
               Remove Shift
+            </button>
+          ) : (
+            <button
+              onClick={async () => {
+                if (!empId) return;
+                await addAvailabilityBlock({ employeeId: empId, startsOn: date, endsOn: date, reason: '' });
+                onToast('Marked unavailable');
+                onClose();
+              }}
+              className="text-[13px] font-medium px-4 py-2 rounded-lg bg-[#1F1B16] text-white border border-[#1F1B16] hover:opacity-80 transition-all"
+            >
+              Unavailable
             </button>
           )}
           <div className="flex gap-2.5 ml-auto">
