@@ -213,7 +213,7 @@ function PrintContent() {
         .emp-name { font-size: 12px; font-weight: 700; color: #000; }
 
         /* ── Shift cell ── */
-        .shift-td { padding: 4px 6px; vertical-align: middle; }
+        .shift-td { padding: 4px 6px; vertical-align: middle; text-align: center; }
         .shift-entry { padding: 2px 0; }
         .shift-entry + .shift-entry { border-top: 0.5px solid #e0e0e0; margin-top: 3px; padding-top: 3px; }
         .shift-time {
