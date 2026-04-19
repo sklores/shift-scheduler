@@ -27,7 +27,20 @@ function errorResponse(status: number, message: string) {
 }
 
 function buildHtml(name: string, body: string): string {
-  const lines = body.split('\n').map(l => `<p style="margin:0 0 6px 0;font-family:'Courier New',monospace;font-size:14px;color:#111">${l}</p>`).join('');
+  // Parse into header line + day blocks separated by blank lines
+  const [headerLine, ...rest] = body.split('\n\n');
+  const dayBlocks = rest.map(block => {
+    const [dayName, ...times] = block.split('\n');
+    const timeRows = times.map(t =>
+      `<p style="margin:2px 0 0 0;font-family:'Courier New',monospace;font-size:15px;font-weight:700;color:#111">${t}</p>`
+    ).join('');
+    return `
+      <div style="margin-bottom:20px">
+        <p style="margin:0 0 4px 0;font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:#888">${dayName}</p>
+        ${timeRows}
+      </div>`;
+  }).join('');
+
   return `
 <!DOCTYPE html>
 <html>
@@ -38,12 +51,10 @@ function buildHtml(name: string, body: string): string {
       <span style="font-family:'Courier New',monospace;font-size:18px;font-weight:800;color:#fff;letter-spacing:0.04em">shift</span>
     </div>
     <div style="padding:24px">
-      <p style="margin:0 0 16px 0;font-size:15px;color:#333">Hi ${name},</p>
-      <p style="margin:0 0 16px 0;font-size:14px;color:#555">Here's your schedule for the upcoming week:</p>
-      <div style="background:#f9f9f9;border:1px solid #e8e8e8;border-radius:6px;padding:16px 20px;margin-bottom:20px">
-        ${lines}
-      </div>
-      <p style="margin:0;font-size:12px;color:#999">Reply to this email if you have questions, or contact management directly.</p>
+      <p style="margin:0 0 4px 0;font-size:15px;color:#333">Hi ${name},</p>
+      <p style="margin:0 0 24px 0;font-size:13px;color:#888">${headerLine}</p>
+      ${dayBlocks}
+      <p style="margin:16px 0 0 0;font-size:12px;color:#bbb;border-top:1px solid #eee;padding-top:16px">Questions? Reply to this email or contact management directly.</p>
     </div>
     <div style="background:#f9f9f9;border-top:1px solid #e8e8e8;padding:12px 24px;text-align:center">
       <p style="margin:0;font-size:11px;color:#bbb;font-family:monospace">schedule.anddone.ai</p>

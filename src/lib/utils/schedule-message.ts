@@ -9,14 +9,18 @@ function shortTime(t: string): string {
   return `${hh}:${String(m).padStart(2, '0')}${h >= 12 ? 'p' : 'a'}`;
 }
 
-export function buildScheduleMessage(emp: Employee, empShifts: Shift[], weekOffset: number): string {
+function getWeekBounds(weekOffset: number) {
   const ws = getWeekStart(weekOffset);
   const weekStartISO = formatWeekStartISO(weekOffset);
   const weekEndDate = new Date(ws); weekEndDate.setDate(ws.getDate() + 6);
   const weekEndISO = `${weekEndDate.getFullYear()}-${String(weekEndDate.getMonth() + 1).padStart(2, '0')}-${String(weekEndDate.getDate()).padStart(2, '0')}`;
+  return { ws, weekStartISO, weekEndISO };
+}
+
+export function buildScheduleMessage(emp: Employee, empShifts: Shift[], weekOffset: number): string {
+  const { ws, weekStartISO, weekEndISO } = getWeekBounds(weekOffset);
   const headerDate = `${DAYS[0]} ${ws.getMonth() + 1}/${ws.getDate()}`;
 
-  // Only include shifts for this employee in the displayed week
   const sorted = [...empShifts]
     .filter(s => s.employeeId === emp.id && s.date >= weekStartISO && s.date <= weekEndISO)
     .sort((a, b) => a.date.localeCompare(b.date) || a.startTime.localeCompare(b.startTime));
@@ -27,6 +31,35 @@ export function buildScheduleMessage(emp: Employee, empShifts: Shift[], weekOffs
 
   const lines = sorted.map(s => `${DAYS[dayIndexForDate(s.date)]} ${shortTime(s.startTime)}–${shortTime(s.endTime)}`);
   return `Schedule (${headerDate}):\n${lines.join('\n')}\nReply STOP to opt out.`;
+}
+
+// Email version — day as header, times below, blank line between days
+export function buildScheduleEmailBody(emp: Employee, empShifts: Shift[], weekOffset: number): string {
+  const { ws, weekStartISO, weekEndISO } = getWeekBounds(weekOffset);
+  const headerDate = `${DAYS[0]} ${ws.getMonth() + 1}/${ws.getDate()}`;
+
+  const sorted = [...empShifts]
+    .filter(s => s.employeeId === emp.id && s.date >= weekStartISO && s.date <= weekEndISO)
+    .sort((a, b) => a.date.localeCompare(b.date) || a.startTime.localeCompare(b.startTime));
+
+  if (!sorted.length) {
+    return `Schedule — week of ${headerDate}\n\nNo shifts this week.`;
+  }
+
+  // Group by day
+  const byDay = new Map<string, Shift[]>();
+  for (const s of sorted) {
+    if (!byDay.has(s.date)) byDay.set(s.date, []);
+    byDay.get(s.date)!.push(s);
+  }
+
+  const blocks = [...byDay.entries()].map(([date, shifts]) => {
+    const dayLabel = DAYS[dayIndexForDate(date)];
+    const times = shifts.map(s => `${shortTime(s.startTime)} – ${shortTime(s.endTime)}`).join('\n');
+    return `${dayLabel}\n${times}`;
+  });
+
+  return `Schedule — week of ${headerDate}\n\n${blocks.join('\n\n')}`;
 }
 
 export interface PublishRecipient {
@@ -85,7 +118,7 @@ export function getPublishRecipients(employees: Employee[], shifts: Shift[], wee
         to: emp.email.trim(),
         name: emp.name,
         subject,
-        body: buildScheduleMessage(emp, shifts, weekOffset),
+        body: buildScheduleEmailBody(emp, shifts, weekOffset),
       });
     }
   }
