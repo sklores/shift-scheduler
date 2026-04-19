@@ -210,23 +210,7 @@ function PrintContent() {
           gap: 6px;
           padding: 5px 7px;
         }
-        .emp-init {
-          font-size: 9px;
-          font-weight: 800;
-          color: #000;
-          width: 22px;
-          flex-shrink: 0;
-          letter-spacing: 0;
-        }
-        .emp-name { font-size: 11px; font-weight: 700; color: #000; }
-        .emp-role {
-          font-size: 8px;
-          font-weight: 500;
-          color: #777;
-          text-transform: uppercase;
-          letter-spacing: 0.06em;
-          margin-top: 1px;
-        }
+        .emp-name { font-size: 12px; font-weight: 700; color: #000; }
 
         /* ── Shift cell ── */
         .shift-td { padding: 4px 6px; vertical-align: middle; }
@@ -234,7 +218,7 @@ function PrintContent() {
         .shift-entry + .shift-entry { border-top: 0.5px solid #e0e0e0; margin-top: 3px; padding-top: 3px; }
         .shift-time {
           font-family: 'Courier New', Courier, monospace;
-          font-size: 13px;
+          font-size: 15px;
           font-weight: 700;
           color: #000;
           white-space: nowrap;
@@ -308,15 +292,10 @@ function PrintContent() {
               <th className="col-staff">Employee</th>
               {dates.map((date, i) => {
                 const d = new Date(date + 'T00:00:00');
-                const dayShifts = shifts.filter(s => s.shift_date === date);
-                const dayHrs = dayShifts.reduce((a, s) => a + calcHours(s.start_time, s.end_time), 0);
                 return (
                   <th key={i} className="col-day">
                     <div className="day-name">{DAYS[i]}</div>
                     <div className="day-num">{d.getDate()}</div>
-                    {dayShifts.length > 0 && (
-                      <div className="day-stats">{dayHrs.toFixed(0)}h · {dayShifts.length}</div>
-                    )}
                   </th>
                 );
               })}
@@ -327,11 +306,7 @@ function PrintContent() {
               <tr key={emp.id}>
                 <td className="emp-td">
                   <div className="emp-inner">
-                    <span className="emp-init">{initials(emp.name)}</span>
-                    <div>
-                      <div className="emp-name">{emp.name}</div>
-                      <div className="emp-role">{emp.role}</div>
-                    </div>
+                    <div className="emp-name">{emp.name}</div>
                   </div>
                 </td>
                 {dates.map((date, di) => {
