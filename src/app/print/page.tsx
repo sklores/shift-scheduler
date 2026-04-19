@@ -229,24 +229,18 @@ function PrintContent() {
         }
 
         /* ── Shift cell ── */
-        .shift-td { padding: 3px 4px; vertical-align: top; }
+        .shift-td { padding: 4px 6px; vertical-align: middle; }
         .shift-entry { padding: 2px 0; }
-        .shift-entry + .shift-entry { border-top: 0.5px solid #e0e0e0; margin-top: 2px; padding-top: 3px; }
+        .shift-entry + .shift-entry { border-top: 0.5px solid #e0e0e0; margin-top: 3px; padding-top: 3px; }
         .shift-time {
           font-family: 'Courier New', Courier, monospace;
-          font-size: 10.5px;
+          font-size: 13px;
           font-weight: 700;
           color: #000;
           white-space: nowrap;
         }
-        .shift-hrs {
-          font-family: 'Courier New', Courier, monospace;
-          font-size: 8.5px;
-          color: #666;
-          margin-left: 3px;
-        }
         .shift-note {
-          font-size: 8px;
+          font-size: 9px;
           color: #555;
           font-style: italic;
           margin-top: 1px;
@@ -348,14 +342,9 @@ function PrintContent() {
                   return (
                     <td key={di} className="shift-td">
                       {cellShifts.map((s, si) => {
-                        const h = calcHours(s.start_time, s.end_time);
-                        const hrs = h % 1 === 0 ? `${h}h` : `${h.toFixed(1)}h`;
                         return (
                           <div key={si} className="shift-entry">
-                            <div>
-                              <span className="shift-time">{fmtTime(s.start_time)}–{fmtTime(s.end_time)}</span>
-                              <span className="shift-hrs">{hrs}</span>
-                            </div>
+                            <div className="shift-time">{fmtTime(s.start_time)}–{fmtTime(s.end_time)}</div>
                             {s.note && <div className="shift-note">{s.note}</div>}
                           </div>
                         );
