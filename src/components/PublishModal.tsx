@@ -5,6 +5,7 @@ import { useSchedulerContext } from '@/context/SchedulerContext';
 import { ROLE_COLORS } from '@/lib/data/types';
 import { getPublishRecipients, buildScheduleMessage } from '@/lib/utils/schedule-message';
 import { cleanPhone } from '@/lib/utils/phone';
+
 import { formatWeekStartISO } from '@/lib/utils/week';
 import Modal from './Modal';
 
@@ -19,6 +20,7 @@ function initials(name: string): string {
 }
 
 type Phase = 'preview' | 'sending' | 'results';
+type SendChannel = 'sms' | 'email';
 
 interface SendResult {
   name: string;
@@ -30,10 +32,12 @@ interface SendResult {
 export default function PublishModal({ isOpen, onClose, onToast }: PublishModalProps) {
   const { employees, currentWeekShifts: shifts, weekOffset } = useSchedulerContext();
   const [phase, setPhase] = useState<Phase>('preview');
+  const [lastChannel, setLastChannel] = useState<SendChannel>('sms');
   const [results, setResults] = useState<SendResult[]>([]);
+  const [sendError, setSendError] = useState<string | null>(null);
 
-  const { recipients, missingPhone, invalidPhone, scheduledEmps } = getPublishRecipients(employees, shifts, weekOffset);
-  const sampleEmp = recipients[0]?.emp || scheduledEmps[0];
+  const { recipients, missingPhone, invalidPhone, emailRecipients, missingEmail, scheduledEmps } = getPublishRecipients(employees, shifts, weekOffset);
+  const sampleEmp = recipients[0]?.emp || emailRecipients[0]?.emp || scheduledEmps[0];
   const sampleMsg = sampleEmp ? buildScheduleMessage(sampleEmp, shifts, weekOffset) : '';
 
   const handleClose = () => {
@@ -43,63 +47,52 @@ export default function PublishModal({ isOpen, onClose, onToast }: PublishModalP
     onClose();
   };
 
-  const [sendError, setSendError] = useState<string | null>(null);
-
-  const handleSend = async () => {
+  const handleSend = async (channel: SendChannel) => {
     setPhase('sending');
+    setLastChannel(channel);
     setSendError(null);
 
-    const payload = {
-      fromWeekStart: formatWeekStartISO(weekOffset),
-      messages: recipients.map(r => ({ to: r.to, body: r.body })),
-    };
+    const fromWeekStart = formatWeekStartISO(weekOffset);
 
     try {
-      const res = await fetch('/api/send-schedule', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
-      const data = await res.json().catch(() => ({}));
+      let apiResults: Array<{ to: string; status: 'sent' | 'failed'; reason?: string }> = [];
 
-      if (!res.ok && !Array.isArray(data?.results)) {
-        throw new Error(data?.error || `Send failed (${res.status})`);
-      }
-
-      const apiResults: Array<{ to: string; status: 'sent' | 'failed'; reason?: string; sid?: string }> =
-        Array.isArray(data.results) ? data.results : [];
-
-      // Map API results back to recipient names
-      const mapped: SendResult[] = recipients.map((r) => {
-        const match = apiResults.find((x) => x.to === r.to);
-        return {
-          name: r.emp.name,
-          to: r.to,
-          status: match?.status === 'sent' ? 'sent' : 'failed',
-          reason: match?.reason,
-        };
-      });
-
-      setResults(mapped);
-      setPhase('results');
-      const sentCount = mapped.filter(m => m.status === 'sent').length;
-      const failedCount = mapped.length - sentCount;
-      if (failedCount === 0) {
-        onToast(`Sent ${sentCount} schedule${sentCount !== 1 ? 's' : ''}`);
+      if (channel === 'sms') {
+        const payload = { fromWeekStart, messages: recipients.map(r => ({ to: r.to, body: r.body })) };
+        const res = await fetch('/api/send-schedule', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok && !Array.isArray(data?.results)) throw new Error(data?.error || `Send failed (${res.status})`);
+        apiResults = Array.isArray(data.results) ? data.results : [];
+        const mapped: SendResult[] = recipients.map(r => {
+          const match = apiResults.find(x => x.to === r.to);
+          return { name: r.emp.name, to: r.to, status: match?.status === 'sent' ? 'sent' : 'failed', reason: match?.reason };
+        });
+        setResults(mapped);
+        setPhase('results');
+        const sentCount = mapped.filter(m => m.status === 'sent').length;
+        const failedCount = mapped.length - sentCount;
+        onToast(failedCount === 0 ? `Sent ${sentCount} text${sentCount !== 1 ? 's' : ''}` : `Sent ${sentCount} · ${failedCount} failed`);
       } else {
-        onToast(`Sent ${sentCount} · ${failedCount} failed`);
+        const payload = { fromWeekStart, messages: emailRecipients.map(r => ({ to: r.to, name: r.name, subject: r.subject, body: r.body })) };
+        const res = await fetch('/api/send-schedule-email', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok && !Array.isArray(data?.results)) throw new Error(data?.error || `Send failed (${res.status})`);
+        apiResults = Array.isArray(data.results) ? data.results : [];
+        const mapped: SendResult[] = emailRecipients.map(r => {
+          const match = apiResults.find(x => x.to === r.to);
+          return { name: r.emp.name, to: r.to, status: match?.status === 'sent' ? 'sent' : 'failed', reason: match?.reason };
+        });
+        setResults(mapped);
+        setPhase('results');
+        const sentCount = mapped.filter(m => m.status === 'sent').length;
+        const failedCount = mapped.length - sentCount;
+        onToast(failedCount === 0 ? `Sent ${sentCount} email${sentCount !== 1 ? 's' : ''}` : `Sent ${sentCount} · ${failedCount} failed`);
       }
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Unknown error';
       setSendError(message);
-      // Mark all as failed with the error
-      const failed: SendResult[] = recipients.map(r => ({
-        name: r.emp.name,
-        to: r.to,
-        status: 'failed',
-        reason: message,
-      }));
-      setResults(failed);
+      const src = channel === 'sms' ? recipients : emailRecipients;
+      setResults(src.map(r => ({ name: r.emp.name, to: r.to, status: 'failed', reason: message })));
       setPhase('results');
       onToast('Send failed');
     }
@@ -185,11 +178,18 @@ export default function PublishModal({ isOpen, onClose, onToast }: PublishModalP
               Cancel
             </button>
             <button
-              onClick={handleSend}
+              onClick={() => handleSend('email')}
+              disabled={emailRecipients.length === 0}
+              className="text-[13px] font-medium px-4 py-2 rounded-lg bg-[var(--color-surface-2)] text-[var(--color-text)] border border-[var(--color-border-strong)] hover:bg-[var(--color-bg)] transition-all disabled:opacity-40 disabled:cursor-not-allowed shadow-sm"
+            >
+              Email {emailRecipients.length}
+            </button>
+            <button
+              onClick={() => handleSend('sms')}
               disabled={recipients.length === 0}
               className="text-[13px] font-medium px-4 py-2 rounded-lg bg-[var(--color-green)] text-white border border-[var(--color-green)] hover:bg-[var(--color-green-hover)] transition-all disabled:opacity-40 disabled:cursor-not-allowed shadow-sm"
             >
-              Send {recipients.length} Text{recipients.length !== 1 ? 's' : ''}
+              Text {recipients.length}
             </button>
           </>
         )
@@ -222,8 +222,8 @@ export default function PublishModal({ isOpen, onClose, onToast }: PublishModalP
         </div>
         <div className="space-y-1">
           {scheduledEmps.map(emp => {
-            const formatted = cleanPhone(emp.phone || '');
-            const ok = !!formatted;
+            const phoneOk = !!cleanPhone(emp.phone || '');
+            const emailOk = !!(emp.email && emp.email.trim());
 
             return (
               <div key={emp.id} className="flex items-center gap-3 py-2 px-2.5 rounded-lg hover:bg-[var(--color-surface-2)] transition-colors">
@@ -235,11 +235,16 @@ export default function PublishModal({ isOpen, onClose, onToast }: PublishModalP
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="text-[13px] font-medium truncate">{emp.name}</div>
-                  <div className="font-mono text-[11px] text-[var(--color-muted)]">{emp.phone || 'no phone'}</div>
+                  <div className="font-mono text-[11px] text-[var(--color-muted)] truncate">{emp.email || emp.phone || 'no contact'}</div>
                 </div>
-                <Badge variant={ok ? 'success' : 'warn'}>
-                  {!emp.phone || !emp.phone.trim() ? 'no phone' : ok ? '✓ ready' : 'invalid'}
-                </Badge>
+                <div className="flex gap-1 flex-shrink-0">
+                  <Badge variant={phoneOk ? 'success' : 'warn'} title="SMS">
+                    {phoneOk ? '✓ sms' : 'no sms'}
+                  </Badge>
+                  <Badge variant={emailOk ? 'success' : 'warn'} title="Email">
+                    {emailOk ? '✓ email' : 'no email'}
+                  </Badge>
+                </div>
               </div>
             );
           })}
@@ -249,14 +254,14 @@ export default function PublishModal({ isOpen, onClose, onToast }: PublishModalP
   );
 }
 
-function Badge({ children, variant }: { children: React.ReactNode; variant: 'success' | 'warn' | 'danger' }) {
+function Badge({ children, variant, title }: { children: React.ReactNode; variant: 'success' | 'warn' | 'danger'; title?: string }) {
   const cls = {
     success: 'bg-[var(--color-green-light)] text-[var(--color-green)]',
     warn: 'bg-[var(--color-warn-light)] text-[var(--color-warn)]',
     danger: 'bg-[var(--color-accent-light)] text-[var(--color-accent)]',
   }[variant];
   return (
-    <span className={`text-[10.5px] font-mono px-2 py-0.5 rounded-full font-semibold uppercase tracking-wide ${cls}`}>
+    <span title={title} className={`text-[10.5px] font-mono px-2 py-0.5 rounded-full font-semibold uppercase tracking-wide ${cls}`}>
       {children}
     </span>
   );

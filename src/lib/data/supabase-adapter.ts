@@ -9,6 +9,7 @@ interface EmployeeRow {
   role: EmployeeRole;
   hourly_rate: number | string;
   phone: string;
+  email: string;
   color: string;
   employee_code: string | null;
   is_active: boolean;
@@ -53,6 +54,7 @@ function employeeFromRow(r: EmployeeRow): Employee {
     role: r.role,
     hourlyRate: typeof r.hourly_rate === 'string' ? parseFloat(r.hourly_rate) : r.hourly_rate,
     phone: r.phone ?? '',
+    email: r.email ?? '',
     color: r.color,
     employeeCode: r.employee_code ?? undefined,
     isActive: r.is_active,
@@ -108,6 +110,7 @@ export class SupabaseAdapter implements DataAdapter {
         role: emp.role,
         hourly_rate: emp.hourlyRate,
         phone: emp.phone,
+        email: emp.email ?? '',
         color: emp.color,
         employee_code: emp.employeeCode ?? null,
         is_active: emp.isActive,
@@ -124,6 +127,7 @@ export class SupabaseAdapter implements DataAdapter {
     if (updates.role !== undefined) patch.role = updates.role;
     if (updates.hourlyRate !== undefined) patch.hourly_rate = updates.hourlyRate;
     if (updates.phone !== undefined) patch.phone = updates.phone;
+    if (updates.email !== undefined) patch.email = updates.email;
     if (updates.color !== undefined) patch.color = updates.color;
     if (updates.employeeCode !== undefined) patch.employee_code = updates.employeeCode ?? null;
     if (updates.isActive !== undefined) patch.is_active = updates.isActive;

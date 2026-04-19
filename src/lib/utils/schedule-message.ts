@@ -35,10 +35,20 @@ export interface PublishRecipient {
   body: string;
 }
 
+export interface EmailRecipient {
+  emp: Employee;
+  to: string;
+  name: string;
+  subject: string;
+  body: string;
+}
+
 export interface PublishResult {
   recipients: PublishRecipient[];
   missingPhone: Employee[];
   invalidPhone: Employee[];
+  emailRecipients: EmailRecipient[];
+  missingEmail: Employee[];
   scheduledEmps: Employee[];
 }
 
@@ -48,19 +58,37 @@ export function getPublishRecipients(employees: Employee[], shifts: Shift[], wee
   const recipients: PublishRecipient[] = [];
   const missingPhone: Employee[] = [];
   const invalidPhone: Employee[] = [];
+  const emailRecipients: EmailRecipient[] = [];
+  const missingEmail: Employee[] = [];
 
   for (const emp of scheduledEmps) {
+    // SMS
     if (!emp.phone || !emp.phone.trim()) {
       missingPhone.push(emp);
-      continue;
+    } else {
+      const to = cleanPhone(emp.phone);
+      if (!to) {
+        invalidPhone.push(emp);
+      } else {
+        recipients.push({ emp, to, body: buildScheduleMessage(emp, shifts, weekOffset) });
+      }
     }
-    const to = cleanPhone(emp.phone);
-    if (!to) {
-      invalidPhone.push(emp);
-      continue;
+
+    // Email
+    if (!emp.email || !emp.email.trim()) {
+      missingEmail.push(emp);
+    } else {
+      const ws = getWeekStart(weekOffset);
+      const subject = `Your schedule — week of ${DAYS[0]} ${ws.getMonth() + 1}/${ws.getDate()}`;
+      emailRecipients.push({
+        emp,
+        to: emp.email.trim(),
+        name: emp.name,
+        subject,
+        body: buildScheduleMessage(emp, shifts, weekOffset),
+      });
     }
-    recipients.push({ emp, to, body: buildScheduleMessage(emp, shifts, weekOffset) });
   }
 
-  return { recipients, missingPhone, invalidPhone, scheduledEmps };
+  return { recipients, missingPhone, invalidPhone, emailRecipients, missingEmail, scheduledEmps };
 }

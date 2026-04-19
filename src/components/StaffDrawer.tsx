@@ -25,6 +25,7 @@ export default function StaffDrawer({ isOpen, onClose, onToast, onConfirm }: Sta
   const [newRole, setNewRole] = useState<EmployeeRole>('server');
   const [newRate, setNewRate] = useState('16');
   const [newPhone, setNewPhone] = useState('');
+  const [newEmail, setNewEmail] = useState('');
 
   const handleAdd = async () => {
     const name = newName.trim();
@@ -35,12 +36,14 @@ export default function StaffDrawer({ isOpen, onClose, onToast, onConfirm }: Sta
       role: newRole,
       hourlyRate: parseFloat(newRate) || 0,
       phone: newPhone.trim(),
+      email: newEmail.trim(),
       color: nextColor,
       isActive: true,
     });
 
     setNewName('');
     setNewPhone('');
+    setNewEmail('');
     setNewRate('16');
     onToast('Employee added');
   };
@@ -149,8 +152,8 @@ export default function StaffDrawer({ isOpen, onClose, onToast, onConfirm }: Sta
                 />
               </div>
             </div>
-            <div className="flex gap-2.5 items-end">
-              <div className="flex-1">
+            <div className="grid grid-cols-2 gap-2.5 mb-2.5">
+              <div>
                 <label className="block text-[10px] font-semibold uppercase tracking-wider text-[var(--color-muted)] mb-1 font-mono">Phone Number</label>
                 <input
                   type="tel"
@@ -160,6 +163,18 @@ export default function StaffDrawer({ isOpen, onClose, onToast, onConfirm }: Sta
                   onChange={(e) => setNewPhone(e.target.value)}
                 />
               </div>
+              <div>
+                <label className="block text-[10px] font-semibold uppercase tracking-wider text-[var(--color-muted)] mb-1 font-mono">Email</label>
+                <input
+                  type="email"
+                  className="w-full border border-[var(--color-border-strong)] rounded-md px-3 py-2 text-[13px] bg-white text-[var(--color-text)] focus:border-[var(--color-accent)] outline-none transition-colors"
+                  placeholder="employee@email.com"
+                  value={newEmail}
+                  onChange={(e) => setNewEmail(e.target.value)}
+                />
+              </div>
+            </div>
+            <div className="flex justify-end">
               <button
                 onClick={handleAdd}
                 className="text-[13px] font-medium px-4 py-2 rounded-lg bg-[var(--color-accent)] text-white border border-[var(--color-accent)] hover:bg-[var(--color-accent-hover)] transition-all flex-shrink-0"

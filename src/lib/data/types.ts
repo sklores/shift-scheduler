@@ -14,6 +14,7 @@ export interface Employee {
   role: EmployeeRole;
   hourlyRate: number;
   phone: string;
+  email: string;
   color: string;
   employeeCode?: string;
   isActive: boolean;

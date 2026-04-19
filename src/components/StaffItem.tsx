@@ -85,6 +85,21 @@ export default function StaffItem({ employee, onRemove }: StaffItemProps) {
           {employee.phone ? '✓ has phone' : 'no phone'}
         </span>
       </div>
+
+      {/* Email row */}
+      <div className="flex items-center gap-2 mt-1.5">
+        <svg width="13" height="13" viewBox="0 0 13 13" fill="none" className="text-[var(--color-muted)] flex-shrink-0"><rect x="1.5" y="3" width="10" height="7" rx="1" stroke="currentColor" strokeWidth="1.2"/><path d="M1.5 4.5L6.5 7.5L11.5 4.5" stroke="currentColor" strokeWidth="1.2" strokeLinejoin="round"/></svg>
+        <input
+          type="email"
+          className="flex-1 border border-[var(--color-border)] rounded-md px-3 py-1.5 font-mono text-[12px] bg-transparent text-[var(--color-text)] focus:border-[var(--color-green)] focus:bg-white outline-none transition-all"
+          placeholder="employee@email.com"
+          value={employee.email ?? ''}
+          onChange={(e) => updateEmployee(employee.id, { email: e.target.value })}
+        />
+        <span className={`text-[10px] font-mono flex-shrink-0 uppercase tracking-wider ${employee.email ? 'text-[var(--color-green)]' : 'text-[var(--color-muted)]'}`}>
+          {employee.email ? '✓ has email' : 'no email'}
+        </span>
+      </div>
     </div>
   );
 }
