@@ -86,12 +86,12 @@ export default async function OpenGraphImage() {
         {/* Bottom: shift pills */}
         <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
           {[
-            { bg: '#2a4f72', label: 'Mon 8–4' },
-            { bg: '#5a3e6b', label: 'Tue 11–7' },
-            { bg: '#6a3a30', label: 'Wed 7–3' },
-            { bg: '#3a6a35', label: 'Thu 9–5' },
-            { bg: '#5a5028', label: 'Fri 10–6' },
-            { bg: '#2f5866', label: 'Sat 8–2' },
+            { bg: '#a02843', label: 'Mon 8–4' },
+            { bg: '#0e7490', label: 'Tue 11–7' },
+            { bg: '#c2410c', label: 'Wed 7–3' },
+            { bg: '#15803d', label: 'Thu 9–5' },
+            { bg: '#7c3aed', label: 'Fri 10–6' },
+            { bg: '#6b3e18', label: 'Sat 8–2' },
           ].map(({ bg, label }) => (
             <div
               key={label}

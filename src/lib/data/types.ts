@@ -44,18 +44,19 @@ export interface WeekStats {
   totalShifts: number;
 }
 
+// Restaurant vibe. Rich & distinct at a glance — all dark enough for white text.
 export const ROLE_COLORS: Record<EmployeeRole, string> = {
-  manager: '#2a4f72',
-  server: '#5a3e6b',
-  cashier: '#3a6a35',
-  cook: '#6a3a30',
-  host: '#5a5028',
-  barista: '#2f5866',
+  manager: '#a02843', // wine / burgundy — authority
+  server:  '#0e7490', // ocean teal — front of house
+  cashier: '#15803d', // cash green
+  cook:    '#c2410c', // paprika — kitchen heat
+  host:    '#7c3aed', // vivid plum — welcoming
+  barista: '#6b3e18', // espresso brown
 };
 
 export const EMPLOYEE_COLORS = [
-  '#2a4f72', '#5a3e6b', '#3a6a35', '#6a3a30',
-  '#5a5028', '#2f5866', '#6a5028', '#3a4f72',
+  '#a02843', '#0e7490', '#15803d', '#c2410c',
+  '#7c3aed', '#6b3e18', '#b45309', '#be185d',
 ];
 
 export const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'] as const;
