@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import type { DataAdapter } from '../data/adapter';
-import type { Employee, Shift, Template, WeekStats } from '../data/types';
+import type { AvailabilityBlock, Employee, Shift, Template, WeekStats } from '../data/types';
 import { EMPLOYEE_COLORS } from '../data/types';
 import { calculateWeekStats } from '../utils/cost';
 import { findConflictingShiftIds } from '../utils/conflicts';
@@ -22,6 +22,7 @@ export function useScheduler(adapter: DataAdapter) {
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [shifts, setShifts] = useState<Shift[]>([]);
   const [templates, setTemplates] = useState<Template[]>([]);
+  const [availabilityBlocks, setAvailabilityBlocks] = useState<AvailabilityBlock[]>([]);
   const [weekOffset, setWeekOffset] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [weekClipboard, setWeekClipboard] = useState<WeekClipboardItem[] | null>(null);
@@ -53,15 +54,17 @@ export function useScheduler(adapter: DataAdapter) {
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      const [emps, sh, tmpl] = await Promise.all([
+      const [emps, sh, tmpl, avail] = await Promise.all([
         adapter.getEmployees(),
         adapter.getShifts(),
         adapter.getTemplates(),
+        adapter.getAvailabilityBlocks(),
       ]);
       if (!cancelled) {
         setEmployees(emps);
         setShifts(sh);
         setTemplates(tmpl);
+        setAvailabilityBlocks(avail);
         setIsLoading(false);
       }
     })();
@@ -256,6 +259,30 @@ export function useScheduler(adapter: DataAdapter) {
     setTemplates(prev => prev.filter(t => t.id !== id));
   }, [adapter]);
 
+  // --- Availability block actions ---
+  const addAvailabilityBlock = useCallback(async (data: Omit<AvailabilityBlock, 'id'>) => {
+    const block = await track(() => adapter.addAvailabilityBlock(data));
+    setAvailabilityBlocks(prev => [...prev, block].sort((a, b) => a.startsOn.localeCompare(b.startsOn)));
+    return block;
+  }, [adapter, track]);
+
+  const removeAvailabilityBlock = useCallback(async (id: string) => {
+    await track(() => adapter.removeAvailabilityBlock(id));
+    setAvailabilityBlocks(prev => prev.filter(b => b.id !== id));
+  }, [adapter, track]);
+
+  /** Returns true if the employee has an availability block covering the given ISO date. */
+  const isDateBlocked = useCallback((empId: string, date: string): boolean => {
+    return availabilityBlocks.some(b =>
+      b.employeeId === empId && b.startsOn <= date && b.endsOn >= date
+    );
+  }, [availabilityBlocks]);
+
+  /** Returns all blocks for a given employee, sorted by start date. */
+  const getBlocksForEmployee = useCallback((empId: string): AvailabilityBlock[] => {
+    return availabilityBlocks.filter(b => b.employeeId === empId);
+  }, [availabilityBlocks]);
+
   // --- Week navigation ---
   const changeWeek = useCallback((dir: -1 | 1) => {
     setWeekOffset(prev => prev + dir);
@@ -318,6 +345,13 @@ export function useScheduler(adapter: DataAdapter) {
     applyTemplate,
     renameTemplate,
     deleteTemplate,
+
+    // Availability
+    availabilityBlocks,
+    addAvailabilityBlock,
+    removeAvailabilityBlock,
+    isDateBlocked,
+    getBlocksForEmployee,
 
     // Week
     changeWeek,

@@ -13,7 +13,11 @@ interface ToolbarProps {
 }
 
 export default function Toolbar({ onAddShift, onClearWeek, onSaveTemplate, onApplyTemplate, onCopyWeek, onPasteWeek }: ToolbarProps) {
-  const { weekStats, weekClipboard, currentWeekShifts } = useSchedulerContext();
+  const { weekStats, weekClipboard, currentWeekShifts, weekStart } = useSchedulerContext();
+
+  const handlePrint = () => {
+    window.open(`/print?week=${weekStart}`, '_blank', 'noopener');
+  };
   const hasClipboard = !!weekClipboard && weekClipboard.length > 0;
   const canCopy = currentWeekShifts.length > 0;
 
@@ -66,6 +70,14 @@ export default function Toolbar({ onAddShift, onClearWeek, onSaveTemplate, onApp
           className="text-[13px] font-medium px-3.5 py-2 rounded-lg bg-transparent text-[var(--color-muted)] border border-[var(--color-border-strong)] hover:bg-[var(--color-bg)] hover:text-[var(--color-accent)] transition-all flex-shrink-0"
         >
           Clear Week
+        </button>
+        <button
+          onClick={handlePrint}
+          className="text-[13px] font-medium px-3.5 py-2 rounded-lg bg-transparent text-[var(--color-muted)] border border-[var(--color-border-strong)] hover:bg-[var(--color-bg)] hover:text-[var(--color-text)] transition-all flex-shrink-0 flex items-center gap-1.5"
+          title="Open printable schedule in new tab"
+        >
+          <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M3 4V2H10V4" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/><rect x="1" y="4" width="11" height="6" rx="1.5" stroke="currentColor" strokeWidth="1.3"/><path d="M3 10V11H10V10" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/><circle cx="9.5" cy="7" r="0.75" fill="currentColor"/></svg>
+          <span className="hidden sm:inline">Print</span>
         </button>
 
         {/* Stats — desktop */}

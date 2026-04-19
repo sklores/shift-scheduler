@@ -204,7 +204,7 @@ export default function StaffDrawer({ isOpen, onClose, onToast, onConfirm }: Sta
               </div>
             ) : (
               employees.map(emp => (
-                <StaffItem key={emp.id} employee={emp} onRemove={handleRemove} />
+                <StaffItem key={emp.id} employee={emp} onRemove={handleRemove} onToast={onToast} />
               ))
             )}
           </div>

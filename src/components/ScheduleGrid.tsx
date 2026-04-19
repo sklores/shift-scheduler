@@ -44,7 +44,7 @@ interface ShiftClipboard {
 }
 
 function DesktopGrid({ onAddShift, onEditShift, onDeleteShift }: ScheduleGridProps) {
-  const { employees, weekDates, weekOffset, currentWeekShifts, getShiftsForCell, moveShift, changeWeek, conflictingShiftIds, addShift } = useSchedulerContext();
+  const { employees, weekDates, weekOffset, currentWeekShifts, getShiftsForCell, moveShift, changeWeek, conflictingShiftIds, addShift, isDateBlocked } = useSchedulerContext();
   const [dragTarget, setDragTarget] = useState<string | null>(null);
   const [focusedCell, setFocusedCell] = useState<{ row: number; col: number }>({ row: 0, col: 0 });
   const [clipboard, setClipboard] = useState<ShiftClipboard | null>(null);
@@ -259,6 +259,7 @@ function DesktopGrid({ onAddShift, onEditShift, onDeleteShift }: ScheduleGridPro
                 const isDragOver = dragTarget === cellKey;
                 const isFocused = focusedCell.row === rowIdx && focusedCell.col === dayIdx;
                 const refKey = `${rowIdx}-${dayIdx}`;
+                const blocked = isDateBlocked(emp.id, cellDate);
 
                 return (
                   <div
@@ -270,6 +271,9 @@ function DesktopGrid({ onAddShift, onEditShift, onDeleteShift }: ScheduleGridPro
                     className={`border-r border-b border-[var(--color-border)] last:border-r-0 p-1.5 transition-colors overflow-hidden relative ${
                       isAlt ? 'bg-[#fafaf7]' : 'bg-[var(--color-surface)]'
                     } ${isDragOver ? 'drag-over' : ''} ${isFocused ? 'kbd-focused' : ''}`}
+                    style={blocked ? {
+                      backgroundImage: 'repeating-linear-gradient(-45deg, transparent, transparent 5px, rgba(0,0,0,0.035) 5px, rgba(0,0,0,0.035) 6px)',
+                    } : undefined}
                     onClick={(e) => {
                       const target = e.target as HTMLElement;
                       if (target.closest('[data-shift-block]') || target.closest('[data-add-btn]')) return;
@@ -294,6 +298,9 @@ function DesktopGrid({ onAddShift, onEditShift, onDeleteShift }: ScheduleGridPro
                       if (shiftId) await moveShift(shiftId, emp.id, cellDate);
                     }}
                   >
+                    {blocked && cellShifts.length === 0 && (
+                      <div className="absolute top-1 right-1.5 font-mono text-[9px] text-[var(--color-muted)] uppercase tracking-wide opacity-60">off</div>
+                    )}
                     <div className="flex flex-col gap-1 max-h-[60px] overflow-auto pr-0.5">
                       {cellShifts.map(shift => (
                         <ShiftBlock
@@ -309,8 +316,13 @@ function DesktopGrid({ onAddShift, onEditShift, onDeleteShift }: ScheduleGridPro
                     </div>
                     <button
                       data-add-btn
-                      className="block w-full border border-dashed border-[var(--color-border-strong)] text-[var(--color-muted)] rounded-md text-[11px] text-center py-[3px] mt-1 hover:border-[var(--color-accent)] hover:text-[var(--color-accent)] hover:bg-[var(--color-accent-subtle)] transition-all"
+                      className={`block w-full border border-dashed rounded-md text-[11px] text-center py-[3px] mt-1 transition-all ${
+                        blocked
+                          ? 'border-[var(--color-border)] text-[var(--color-muted)] opacity-40 hover:opacity-70'
+                          : 'border-[var(--color-border-strong)] text-[var(--color-muted)] hover:border-[var(--color-accent)] hover:text-[var(--color-accent)] hover:bg-[var(--color-accent-subtle)]'
+                      }`}
                       onClick={(e) => { e.stopPropagation(); onAddShift(emp.id, cellDate); }}
+                      title={blocked ? 'Employee marked unavailable — click to override' : undefined}
                     >
                       +
                     </button>

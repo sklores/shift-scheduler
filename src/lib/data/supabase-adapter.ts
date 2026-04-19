@@ -1,6 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { DataAdapter } from './adapter';
-import type { Employee, EmployeeRole, Shift, Template, TemplateItem } from './types';
+import type { AvailabilityBlock, Employee, EmployeeRole, Shift, Template, TemplateItem } from './types';
 
 // Row shapes (snake_case in Supabase)
 interface EmployeeRow {
@@ -288,5 +288,42 @@ export class SupabaseAdapter implements DataAdapter {
   async removeTemplate(id: string): Promise<void> {
     const { error } = await this.supabase.from('shift_templates').delete().eq('id', id);
     if (error) throw new Error(`removeTemplate: ${error.message}`);
+  }
+
+  // --- Availability blocks ---
+  async getAvailabilityBlocks(): Promise<AvailabilityBlock[]> {
+    const { data, error } = await this.supabase
+      .from('shift_availability_blocks')
+      .select('*')
+      .order('starts_on');
+    if (error) throw new Error(`getAvailabilityBlocks: ${error.message}`);
+    return (data as Array<{ id: string; employee_id: string; starts_on: string; ends_on: string; reason: string | null }>).map(r => ({
+      id: r.id,
+      employeeId: r.employee_id,
+      startsOn: r.starts_on,
+      endsOn: r.ends_on,
+      reason: r.reason ?? '',
+    }));
+  }
+
+  async addAvailabilityBlock(block: Omit<AvailabilityBlock, 'id'>): Promise<AvailabilityBlock> {
+    const { data, error } = await this.supabase
+      .from('shift_availability_blocks')
+      .insert({
+        employee_id: block.employeeId,
+        starts_on: block.startsOn,
+        ends_on: block.endsOn,
+        reason: block.reason || null,
+      })
+      .select()
+      .single();
+    if (error) throw new Error(`addAvailabilityBlock: ${error.message}`);
+    const r = data as { id: string; employee_id: string; starts_on: string; ends_on: string; reason: string | null };
+    return { id: r.id, employeeId: r.employee_id, startsOn: r.starts_on, endsOn: r.ends_on, reason: r.reason ?? '' };
+  }
+
+  async removeAvailabilityBlock(id: string): Promise<void> {
+    const { error } = await this.supabase.from('shift_availability_blocks').delete().eq('id', id);
+    if (error) throw new Error(`removeAvailabilityBlock: ${error.message}`);
   }
 }

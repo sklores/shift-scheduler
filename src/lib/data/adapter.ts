@@ -1,4 +1,4 @@
-import type { Employee, Shift, Template } from './types';
+import type { AvailabilityBlock, Employee, Shift, Template } from './types';
 
 export interface DataAdapter {
   getEmployees(): Promise<Employee[]>;
@@ -16,4 +16,8 @@ export interface DataAdapter {
   saveTemplate(template: Omit<Template, 'id'>): Promise<Template>;
   updateTemplate(id: string, updates: Partial<Template>): Promise<Template>;
   removeTemplate(id: string): Promise<void>;
+
+  getAvailabilityBlocks(): Promise<AvailabilityBlock[]>;
+  addAvailabilityBlock(block: Omit<AvailabilityBlock, 'id'>): Promise<AvailabilityBlock>;
+  removeAvailabilityBlock(id: string): Promise<void>;
 }

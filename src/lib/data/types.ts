@@ -1,5 +1,13 @@
 export type EmployeeRole = 'manager' | 'server' | 'cashier' | 'cook' | 'host' | 'barista';
 
+export interface AvailabilityBlock {
+  id: string;
+  employeeId: string;
+  startsOn: string; // YYYY-MM-DD
+  endsOn: string;   // YYYY-MM-DD
+  reason: string;
+}
+
 export interface Employee {
   id: string;
   name: string;

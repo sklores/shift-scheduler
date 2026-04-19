@@ -151,4 +151,9 @@ export class LocalStorageAdapter implements DataAdapter {
     const templates = await this.getTemplates();
     write(KEYS.templates, templates.filter(t => t.id !== id));
   }
+
+  // --- Availability blocks (no-op stub for localStorage adapter) ---
+  async getAvailabilityBlocks() { return []; }
+  async addAvailabilityBlock(block: import('./types').AvailabilityBlock) { return { ...block, id: Math.random().toString(36).slice(2) }; }
+  async removeAvailabilityBlock(_id: string) { return; }
 }
