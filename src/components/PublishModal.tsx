@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useSchedulerContext } from '@/context/SchedulerContext';
+import { ROLE_COLORS } from '@/lib/data/types';
 import { getPublishRecipients, buildScheduleMessage } from '@/lib/utils/schedule-message';
 import { cleanPhone } from '@/lib/utils/phone';
 import { formatWeekStartISO } from '@/lib/utils/week';
@@ -228,7 +229,7 @@ export default function PublishModal({ isOpen, onClose, onToast }: PublishModalP
               <div key={emp.id} className="flex items-center gap-3 py-2 px-2.5 rounded-lg hover:bg-[var(--color-surface-2)] transition-colors">
                 <div
                   className="w-8 h-8 rounded-full flex items-center justify-center text-[11px] font-semibold text-white flex-shrink-0"
-                  style={{ backgroundColor: emp.color }}
+                  style={{ backgroundColor: ROLE_COLORS[emp.role] }}
                 >
                   {initials(emp.name)}
                 </div>

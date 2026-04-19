@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { useSchedulerContext } from '@/context/SchedulerContext';
-import { DAYS } from '@/lib/data/types';
+import { DAYS, ROLE_COLORS } from '@/lib/data/types';
 import { isToday, getDateForCell, toISODate } from '@/lib/utils/week';
 import { employeeWeeklyHours, employeeWeeklyCost, formatCurrency } from '@/lib/utils/cost';
 import { calcHours } from '@/lib/utils/time';
@@ -230,7 +230,7 @@ function DesktopGrid({ onAddShift, onEditShift, onDeleteShift }: ScheduleGridPro
               <div className="sticky left-0 z-[9] bg-[var(--color-surface)] border-r border-b border-[var(--color-border)] px-4 flex items-center gap-3 hover:bg-[var(--color-surface-2)] transition-colors">
                 <div
                   className="w-8 h-8 rounded-full flex items-center justify-center text-[11px] font-semibold text-white flex-shrink-0 ring-2 ring-white"
-                  style={{ backgroundColor: emp.color }}
+                  style={{ backgroundColor: ROLE_COLORS[emp.role] }}
                 >
                   {initials(emp.name)}
                 </div>

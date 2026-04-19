@@ -1,6 +1,7 @@
 'use client';
 
 import type { Employee } from '@/lib/data/types';
+import { ROLE_COLORS } from '@/lib/data/types';
 import { employeeWeeklyHours, employeeWeeklyCost, formatCurrency } from '@/lib/utils/cost';
 import { isOvertime, OT_THRESHOLD_HOURS } from '@/lib/utils/conflicts';
 import { useSchedulerContext } from '@/context/SchedulerContext';
@@ -24,7 +25,7 @@ export default function StaffItem({ employee, onRemove }: StaffItemProps) {
       <div className="flex items-center gap-3">
         <div
           className="w-9 h-9 rounded-full flex items-center justify-center text-[11px] font-semibold text-white flex-shrink-0 ring-2 ring-white"
-          style={{ backgroundColor: employee.color }}
+          style={{ backgroundColor: ROLE_COLORS[employee.role] }}
         >
           {initials(employee.name)}
         </div>
