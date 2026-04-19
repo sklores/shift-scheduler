@@ -15,9 +15,8 @@ interface StaffDrawerProps {
 
 export default function StaffDrawer({ isOpen, onClose, onToast, onConfirm }: StaffDrawerProps) {
   const {
-    employees, templates, weekStats,
+    employees, weekStats,
     addEmployee, removeEmployee,
-    renameTemplate, deleteTemplate,
     nextColor,
   } = useSchedulerContext();
 
@@ -60,24 +59,6 @@ export default function StaffDrawer({ isOpen, onClose, onToast, onConfirm }: Sta
     if (!ok) return;
     await removeEmployee(id);
     onToast('Employee removed');
-  };
-
-  const handleRename = async (id: string, currentName: string) => {
-    const name = prompt('Rename template:', currentName);
-    if (name && name.trim()) await renameTemplate(id, name.trim());
-  };
-
-  const handleDeleteTemplate = async (id: string, name: string) => {
-    const ok = await onConfirm({
-      title: `Delete template "${name}"?`,
-      message: 'This will permanently remove the template.',
-      confirmLabel: 'Delete',
-      destructive: true,
-    });
-    if (ok) {
-      await deleteTemplate(id);
-      onToast('Template deleted');
-    }
   };
 
   return (
@@ -183,23 +164,6 @@ export default function StaffDrawer({ isOpen, onClose, onToast, onConfirm }: Sta
               </button>
             </div>
           </div>
-
-          {/* Templates */}
-          {templates.length > 0 && (
-            <div className="px-5 py-4 border-b border-[var(--color-border)]">
-              <h3 className="font-mono text-[10px] uppercase tracking-[0.12em] text-[var(--color-muted)] mb-2.5">Templates</h3>
-              <div className="space-y-1.5">
-                {templates.map(t => (
-                  <div key={t.id} className="flex items-center gap-2.5 py-2 px-3 rounded-md hover:bg-[var(--color-surface-2)] transition-colors">
-                    <span className="flex-1 text-[13px] font-medium truncate">{t.name}</span>
-                    <span className="text-[11px] text-[var(--color-muted)] font-mono">{t.items.length} shifts</span>
-                    <button onClick={() => handleRename(t.id, t.name)} className="text-[11px] text-[var(--color-muted)] hover:text-[var(--color-text)] font-medium">rename</button>
-                    <button onClick={() => handleDeleteTemplate(t.id, t.name)} className="text-[11px] text-[var(--color-muted)] hover:text-[var(--color-accent)] font-medium">delete</button>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
 
           {/* Employee list */}
           <div className="py-1">
