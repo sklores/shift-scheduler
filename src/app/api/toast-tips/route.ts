@@ -3,6 +3,9 @@ import { NextRequest, NextResponse } from 'next/server';
 const AUTH_URL = 'https://ws-api.toasttab.com/authentication/v1/authentication/login';
 const BASE = 'https://ws-api.toasttab.com';
 
+// Force this route to never use any Next.js caching
+export const dynamic = 'force-dynamic';
+
 async function getToastToken(): Promise<string> {
   const res = await fetch(AUTH_URL, {
     method: 'POST',
@@ -12,6 +15,7 @@ async function getToastToken(): Promise<string> {
       clientSecret: process.env.TOAST_CLIENT_SECRET,
       userAccessType: 'TOAST_MACHINE_CLIENT',
     }),
+    cache: 'no-store',
   });
   if (!res.ok) throw new Error(`Toast auth failed: ${res.status}`);
   const body = await res.json();
@@ -30,17 +34,27 @@ function addDays(iso: string, n: number): string {
   return d.toISOString().slice(0, 10);
 }
 
-// Fetch ALL pages for a business date, following Link: rel="next"
+// Fetch ALL pages for a single business date sequentially, following Link: rel="next"
 async function fetchDayTips(headers: Record<string, string>, businessDate: string): Promise<number> {
   let tips = 0;
   let url: string | null = `${BASE}/orders/v2/ordersBulk?businessDate=${businessDate}&pageSize=100`;
+  let pageCount = 0;
 
   while (url) {
+    pageCount++;
     const pageUrl: string = url;
-    const pageRes: Response = await fetch(pageUrl, { headers });
-    if (!pageRes.ok) break;
+    const pageRes: Response = await fetch(pageUrl, { headers, cache: 'no-store' });
+
+    if (!pageRes.ok) {
+      console.error(`[toast-tips] ${businessDate} page ${pageCount} failed: ${pageRes.status} ${pageRes.statusText}`);
+      break;
+    }
+
     const orders: unknown = await pageRes.json();
-    if (!Array.isArray(orders)) break;
+    if (!Array.isArray(orders)) {
+      console.error(`[toast-tips] ${businessDate} page ${pageCount} non-array response`);
+      break;
+    }
 
     for (const order of orders) {
       for (const check of (order as { checks?: { payments?: { tipAmount?: number }[] }[] }).checks ?? []) {
@@ -51,7 +65,7 @@ async function fetchDayTips(headers: Record<string, string>, businessDate: strin
       }
     }
 
-    // Parse Link header for next page
+    // Follow Link: rel="next" for pagination
     const linkHeader = pageRes.headers.get('link') ?? '';
     const nextMatch = linkHeader.match(/<([^>]+)>;\s*rel="next"/);
     url = nextMatch ? nextMatch[1] : null;
@@ -78,18 +92,17 @@ export async function GET(req: NextRequest) {
       'Content-Type': 'application/json',
     };
 
+    // Fetch days SEQUENTIALLY — parallel requests trigger Toast rate limiting,
+    // causing random days to return 0 or fail on different reloads.
     const days = Array.from({ length: 7 }, (_, i) => addDays(week, i));
-    const results = await Promise.allSettled(
-      days.map(iso => fetchDayTips(headers, toBusinessDate(iso)))
-    );
-
     const byDay: Record<string, number> = {};
     let total = 0;
-    results.forEach((r, i) => {
-      const tips = r.status === 'fulfilled' ? r.value : 0;
+
+    for (let i = 0; i < days.length; i++) {
+      const tips = await fetchDayTips(headers, toBusinessDate(days[i]));
       byDay[DAY_LABELS[i]] = tips;
       total += tips;
-    });
+    }
 
     return NextResponse.json({
       total: Math.round(total * 100) / 100,
@@ -98,6 +111,7 @@ export async function GET(req: NextRequest) {
       fetchedAt: new Date().toISOString(),
     });
   } catch (err) {
+    console.error('[toast-tips] fatal:', err);
     return NextResponse.json({ error: (err as Error).message }, { status: 500 });
   }
 }
