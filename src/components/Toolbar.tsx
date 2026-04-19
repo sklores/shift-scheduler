@@ -1,5 +1,6 @@
 'use client';
 
+import { useRef, useState } from 'react';
 import { useSchedulerContext } from '@/context/SchedulerContext';
 import { formatCurrency, estimatedTax, laborPlusTax, PAYROLL_TAX_RATE } from '@/lib/utils/cost';
 
@@ -10,13 +11,36 @@ interface ToolbarProps {
   onApplyTemplate: () => void;
   onCopyWeek: () => void;
   onPasteWeek: () => void;
+  onToast: (msg: string) => void;
 }
 
-export default function Toolbar({ onAddShift, onClearWeek, onSaveTemplate, onApplyTemplate, onCopyWeek, onPasteWeek }: ToolbarProps) {
-  const { weekStats, weekClipboard, currentWeekShifts, weekStart } = useSchedulerContext();
+export default function Toolbar({ onAddShift, onClearWeek, onSaveTemplate, onApplyTemplate, onCopyWeek, onPasteWeek, onToast }: ToolbarProps) {
+  const { weekStats, weekClipboard, currentWeekShifts, weekStart, employees, saveTemplateFromItems } = useSchedulerContext();
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handlePrint = () => {
     window.open(`/print?week=${weekStart}`, '_blank', 'noopener');
+  };
+
+  const handleUpload = async (file: File) => {
+    setUploading(true);
+    try {
+      const form = new FormData();
+      form.append('file', file);
+      form.append('employees', JSON.stringify(employees.map(e => ({ id: e.id, name: e.name }))));
+      const res = await fetch('/api/upload-schedule', { method: 'POST', body: form });
+      const data = await res.json();
+      if (!res.ok) { onToast(data.error || 'Upload failed'); return; }
+      const label = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      await saveTemplateFromItems(`Photo Schedule — ${label}`, data.items);
+      onToast(`Saved ${data.items.length} shifts as template`);
+    } catch {
+      onToast('Upload failed — try again');
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
   };
   const hasClipboard = !!weekClipboard && weekClipboard.length > 0;
   const canCopy = currentWeekShifts.length > 0;
@@ -79,6 +103,28 @@ export default function Toolbar({ onAddShift, onClearWeek, onSaveTemplate, onApp
           <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M3 4V2H10V4" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/><rect x="1" y="4" width="11" height="6" rx="1.5" stroke="currentColor" strokeWidth="1.3"/><path d="M3 10V11H10V10" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/><circle cx="9.5" cy="7" r="0.75" fill="currentColor"/></svg>
           <span className="hidden sm:inline">Print</span>
         </button>
+
+        <button
+          onClick={() => fileInputRef.current?.click()}
+          disabled={uploading || employees.length === 0}
+          className="text-[13px] font-medium px-3.5 py-2 rounded-lg bg-transparent text-[var(--color-muted)] border border-[var(--color-border-strong)] hover:bg-[var(--color-bg)] hover:text-[var(--color-text)] transition-all flex-shrink-0 flex items-center gap-1.5 disabled:opacity-40 disabled:cursor-not-allowed"
+          title={employees.length === 0 ? 'Add employees first' : 'Upload a photo of a handwritten schedule to create a template'}
+        >
+          {uploading ? (
+            <span className="inline-block w-3 h-3 border-2 border-[var(--color-border-strong)] border-t-[var(--color-text)] rounded-full animate-spin" />
+          ) : (
+            <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><rect x="1" y="3" width="11" height="9" rx="1.5" stroke="currentColor" strokeWidth="1.3"/><circle cx="6.5" cy="7.5" r="2" stroke="currentColor" strokeWidth="1.3"/><path d="M4.5 3V2.5C4.5 1.67 5.17 1 6 1H7C7.83 1 8.5 1.67 8.5 2.5V3" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/></svg>
+          )}
+          <span className="hidden sm:inline">{uploading ? 'Reading…' : 'Photo'}</span>
+        </button>
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          capture="environment"
+          className="hidden"
+          onChange={e => { const f = e.target.files?.[0]; if (f) handleUpload(f); }}
+        />
 
         {/* Stats — desktop */}
         <div className="hidden md:flex ml-auto gap-2">

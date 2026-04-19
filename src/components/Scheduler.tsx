@@ -167,6 +167,7 @@ export default function Scheduler() {
         onApplyTemplate={() => setApplyTemplateOpen(true)}
         onCopyWeek={handleCopyWeek}
         onPasteWeek={handlePasteWeek}
+        onToast={toast.show}
       />
       <div className="flex-1 flex overflow-hidden">
         <ScheduleGrid
