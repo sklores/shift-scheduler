@@ -59,8 +59,8 @@ export default function ShiftBlock({
           </div>
           <div className={`font-mono text-white/70 ${compact ? 'text-[10px]' : 'text-[10.5px]'} mt-0.5 flex items-center gap-1.5`}>
             <span>{formatTime(shift.startTime)} – {formatTime(shift.endTime)}</span>
-            {!compact && <span className="text-white/50">·</span>}
-            {!compact && <span className="text-white/50">{hours}h</span>}
+            <span className="text-white/50">·</span>
+            <span className="text-white/50">{hours}h</span>
           </div>
         </div>
         <button

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import type { DataAdapter } from '../data/adapter';
 import type { Employee, Shift, Template, WeekStats } from '../data/types';
 import { EMPLOYEE_COLORS } from '../data/types';
@@ -16,6 +16,8 @@ interface WeekClipboardItem {
   note: string;
 }
 
+export type SaveStatus = 'idle' | 'saving' | 'saved' | 'error';
+
 export function useScheduler(adapter: DataAdapter) {
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [shifts, setShifts] = useState<Shift[]>([]);
@@ -23,6 +25,29 @@ export function useScheduler(adapter: DataAdapter) {
   const [weekOffset, setWeekOffset] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [weekClipboard, setWeekClipboard] = useState<WeekClipboardItem[] | null>(null);
+
+  // Save status tracking — updates on every write, fades back to idle after success
+  const [saveStatus, setSaveStatus] = useState<SaveStatus>('idle');
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Wrap any write op to track status. Consumer just calls track(() => adapter.addShift(...)).
+  const track = useCallback(async <T,>(fn: () => Promise<T>): Promise<T> => {
+    if (saveTimerRef.current) { clearTimeout(saveTimerRef.current); saveTimerRef.current = null; }
+    setSaveStatus('saving');
+    setSaveError(null);
+    try {
+      const result = await fn();
+      setSaveStatus('saved');
+      saveTimerRef.current = setTimeout(() => setSaveStatus('idle'), 1800);
+      return result;
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Save failed';
+      setSaveStatus('error');
+      setSaveError(msg);
+      throw err;
+    }
+  }, []);
 
   // Load data on mount
   useEffect(() => {
@@ -45,48 +70,48 @@ export function useScheduler(adapter: DataAdapter) {
 
   // --- Employee actions ---
   const addEmployee = useCallback(async (data: Omit<Employee, 'id'>) => {
-    const emp = await adapter.addEmployee(data);
+    const emp = await track(() => adapter.addEmployee(data));
     setEmployees(prev => [...prev, emp]);
     return emp;
-  }, [adapter]);
+  }, [adapter, track]);
 
   const updateEmployee = useCallback(async (id: string, updates: Partial<Employee>) => {
-    const emp = await adapter.updateEmployee(id, updates);
+    const emp = await track(() => adapter.updateEmployee(id, updates));
     setEmployees(prev => prev.map(e => e.id === id ? emp : e));
     return emp;
-  }, [adapter]);
+  }, [adapter, track]);
 
   const removeEmployee = useCallback(async (id: string) => {
-    await adapter.removeEmployee(id);
+    await track(() => adapter.removeEmployee(id));
     setEmployees(prev => prev.filter(e => e.id !== id));
     setShifts(prev => prev.filter(s => s.employeeId !== id));
-  }, [adapter]);
+  }, [adapter, track]);
 
   // --- Shift actions ---
   const addShift = useCallback(async (data: Omit<Shift, 'id'>) => {
-    const shift = await adapter.addShift(data);
+    const shift = await track(() => adapter.addShift(data));
     setShifts(prev => [...prev, shift]);
     return shift;
-  }, [adapter]);
+  }, [adapter, track]);
 
   const updateShift = useCallback(async (id: string, updates: Partial<Shift>) => {
-    const shift = await adapter.updateShift(id, updates);
+    const shift = await track(() => adapter.updateShift(id, updates));
     setShifts(prev => prev.map(s => s.id === id ? shift : s));
     return shift;
-  }, [adapter]);
+  }, [adapter, track]);
 
   const deleteShift = useCallback(async (id: string) => {
-    await adapter.removeShift(id);
+    await track(() => adapter.removeShift(id));
     setShifts(prev => prev.filter(s => s.id !== id));
-  }, [adapter]);
+  }, [adapter, track]);
 
   const moveShift = useCallback(async (id: string, newEmployeeId: string, newDate: string) => {
     const shift = shifts.find(s => s.id === id);
     if (!shift) return;
     if (shift.employeeId === newEmployeeId && shift.date === newDate) return;
-    const updated = await adapter.updateShift(id, { employeeId: newEmployeeId, date: newDate });
+    const updated = await track(() => adapter.updateShift(id, { employeeId: newEmployeeId, date: newDate }));
     setShifts(prev => prev.map(s => s.id === id ? updated : s));
-  }, [adapter, shifts]);
+  }, [adapter, shifts, track]);
 
   // Week range helpers
   const weekStart = useMemo(() => formatWeekStartISO(weekOffset), [weekOffset]);
@@ -267,6 +292,8 @@ export function useScheduler(adapter: DataAdapter) {
     weekStart,
     weekEnd,
     isLoading,
+    saveStatus,
+    saveError,
 
     // Employee actions
     addEmployee,

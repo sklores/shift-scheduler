@@ -2,6 +2,7 @@
 
 import { useSchedulerContext } from '@/context/SchedulerContext';
 import { useAuth } from '@/context/AuthContext';
+import SaveIndicator from './SaveIndicator';
 
 interface HeaderProps {
   onOpenDrawer: () => void;
@@ -44,6 +45,7 @@ export default function Header({ onOpenDrawer, onOpenPublish }: HeaderProps) {
 
       {/* Actions */}
       <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
+        <div className="hidden sm:block"><SaveIndicator /></div>
         <button
           onClick={onOpenDrawer}
           className="text-white/90 hover:text-white hover:bg-white/10 w-9 h-9 rounded-md flex items-center justify-center transition-all flex-shrink-0 sm:w-auto sm:h-auto sm:px-3.5 sm:py-1.5 sm:bg-white/[0.08] sm:border sm:border-white/10 sm:gap-2 sm:text-[12.5px] sm:font-medium"
