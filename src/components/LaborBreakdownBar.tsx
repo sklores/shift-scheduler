@@ -1,18 +1,13 @@
 'use client';
 
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useSchedulerContext } from '@/context/SchedulerContext';
 import { computeLaborBreakdown } from '@/lib/utils/laborBreakdown';
 import { formatCurrency, PAYROLL_TAX_RATE } from '@/lib/utils/cost';
+import type { ToastTipsData } from './Scheduler';
 
 const SALARY_KEY = 'shift_weekly_salary';
 const DAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-
-interface ToastTipsData {
-  total: number;
-  byDay: Record<string, number>;
-  fetchedAt: string;
-}
 
 function readNumber(key: string): number {
   if (typeof window === 'undefined') return 0;
@@ -21,16 +16,18 @@ function readNumber(key: string): number {
   return Number.isFinite(n) ? n : 0;
 }
 
-export default function LaborBreakdownBar() {
-  const { currentWeekShifts, employees, weekStats, weekStart } = useSchedulerContext();
+interface LaborBreakdownBarProps {
+  toastTips: ToastTipsData | null;
+  tipsLoading: boolean;
+  tipsError: string | null;
+  onRefreshTips: () => void;
+}
+
+export default function LaborBreakdownBar({ toastTips, tipsLoading, tipsError, onRefreshTips }: LaborBreakdownBarProps) {
+  const { currentWeekShifts, employees, weekStats } = useSchedulerContext();
 
   const [salary, setSalary] = useState<number>(0);
   const [hydrated, setHydrated] = useState(false);
-
-  // Toast tips state
-  const [toastTips, setToastTips] = useState<ToastTipsData | null>(null);
-  const [tipsLoading, setTipsLoading] = useState(false);
-  const [tipsError, setTipsError] = useState<string | null>(null);
 
   useEffect(() => {
     setSalary(readNumber(SALARY_KEY));
@@ -41,33 +38,6 @@ export default function LaborBreakdownBar() {
     if (!hydrated) return;
     localStorage.setItem(SALARY_KEY, String(salary));
   }, [salary, hydrated]);
-
-  const fetchTips = useCallback(async () => {
-    if (!weekStart) return;
-    setTipsLoading(true);
-    setTipsError(null);
-    try {
-      const res = await fetch(`/api/toast-tips?week=${weekStart}`);
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Failed to load tips');
-      setToastTips(data as ToastTipsData);
-    } catch (err) {
-      setTipsError((err as Error).message);
-    } finally {
-      setTipsLoading(false);
-    }
-  }, [weekStart]);
-
-  // Fetch on mount and whenever the displayed week changes
-  useEffect(() => {
-    fetchTips();
-  }, [fetchTips]);
-
-  // Auto-refresh every 10 minutes while the tab is open
-  useEffect(() => {
-    const id = setInterval(fetchTips, 10 * 60 * 1000);
-    return () => clearInterval(id);
-  }, [fetchTips]);
 
   const tips = toastTips?.total ?? 0;
 
@@ -104,7 +74,7 @@ export default function LaborBreakdownBar() {
           data={toastTips}
           loading={tipsLoading}
           error={tipsError}
-          onRefresh={fetchTips}
+          onRefresh={onRefreshTips}
         />
         <Card label="Payroll Tax" value={formatCurrency(b.tax)} sublabel={`~${pct}% of subtotal`} />
         <div className="flex items-center px-1 text-[var(--color-muted)] text-lg font-light flex-shrink-0" aria-hidden>=</div>
@@ -116,53 +86,27 @@ export default function LaborBreakdownBar() {
 }
 
 function Card({
-  label,
-  value,
-  sublabel,
-  big = false,
-  warn = false,
+  label, value, sublabel, big = false, warn = false,
 }: {
-  label: string;
-  value: string;
-  sublabel?: string;
-  big?: boolean;
-  warn?: boolean;
+  label: string; value: string; sublabel?: string; big?: boolean; warn?: boolean;
 }) {
   return (
-    <div
-      className={`${big ? 'min-w-[200px] bg-[var(--color-accent-subtle)] border-[var(--color-accent)]/20' : 'min-w-[140px] bg-[var(--color-surface-2)] border-[var(--color-border)]'} border rounded-lg px-4 py-3 flex-shrink-0 flex flex-col justify-between`}
-    >
-      <div className={`text-[10px] font-mono uppercase tracking-[0.1em] ${warn ? 'text-[var(--color-warn)]' : 'text-[var(--color-muted)]'}`}>
-        {label}
-      </div>
-      <div className={`font-mono font-semibold leading-tight mt-2 ${big ? 'text-[28px] text-[var(--color-accent)]' : 'text-[20px] text-[var(--color-text)]'}`}>
-        {value}
-      </div>
-      {sublabel && (
-        <div className="text-[10px] text-[var(--color-muted)] mt-1 whitespace-nowrap">
-          {sublabel}
-        </div>
-      )}
+    <div className={`${big ? 'min-w-[200px] bg-[var(--color-accent-subtle)] border-[var(--color-accent)]/20' : 'min-w-[140px] bg-[var(--color-surface-2)] border-[var(--color-border)]'} border rounded-lg px-4 py-3 flex-shrink-0 flex flex-col justify-between`}>
+      <div className={`text-[10px] font-mono uppercase tracking-[0.1em] ${warn ? 'text-[var(--color-warn)]' : 'text-[var(--color-muted)]'}`}>{label}</div>
+      <div className={`font-mono font-semibold leading-tight mt-2 ${big ? 'text-[28px] text-[var(--color-accent)]' : 'text-[20px] text-[var(--color-text)]'}`}>{value}</div>
+      {sublabel && <div className="text-[10px] text-[var(--color-muted)] mt-1 whitespace-nowrap">{sublabel}</div>}
     </div>
   );
 }
 
 function EditableCard({
-  label,
-  value,
-  onChange,
-  sublabel,
+  label, value, onChange, sublabel,
 }: {
-  label: string;
-  value: number;
-  onChange: (n: number) => void;
-  sublabel?: string;
+  label: string; value: number; onChange: (n: number) => void; sublabel?: string;
 }) {
   const [text, setText] = useState(value > 0 ? String(value) : '');
 
-  useEffect(() => {
-    setText(value > 0 ? String(value) : '');
-  }, [value]);
+  useEffect(() => { setText(value > 0 ? String(value) : ''); }, [value]);
 
   const handleBlur = () => {
     const parsed = parseFloat(text);
@@ -178,11 +122,7 @@ function EditableCard({
       <div className="font-mono font-semibold leading-tight mt-2 flex items-center gap-0.5">
         <span className="text-[20px] text-[var(--color-muted)]">$</span>
         <input
-          type="number"
-          inputMode="decimal"
-          min={0}
-          step={10}
-          value={text}
+          type="number" inputMode="decimal" min={0} step={10} value={text}
           onChange={(e) => setText(e.target.value)}
           onBlur={handleBlur}
           onKeyDown={(e) => { if (e.key === 'Enter') (e.currentTarget as HTMLInputElement).blur(); }}
@@ -190,28 +130,17 @@ function EditableCard({
           className="w-full text-[20px] font-mono font-semibold text-[var(--color-text)] bg-transparent border-none outline-none focus:text-[var(--color-accent)] placeholder:text-[var(--color-muted)]"
         />
       </div>
-      {sublabel && (
-        <div className="text-[10px] text-[var(--color-muted)] mt-1 whitespace-nowrap">
-          {sublabel}
-        </div>
-      )}
+      {sublabel && <div className="text-[10px] text-[var(--color-muted)] mt-1 whitespace-nowrap">{sublabel}</div>}
     </div>
   );
 }
 
 function ToastTipsCard({
-  data,
-  loading,
-  error,
-  onRefresh,
+  data, loading, error, onRefresh,
 }: {
-  data: ToastTipsData | null;
-  loading: boolean;
-  error: string | null;
-  onRefresh: () => void;
+  data: ToastTipsData | null; loading: boolean; error: string | null; onRefresh: () => void;
 }) {
   const [showDays, setShowDays] = useState(false);
-
   const fetchedTime = data?.fetchedAt
     ? new Date(data.fetchedAt).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })
     : null;
@@ -222,11 +151,9 @@ function ToastTipsCard({
       onMouseEnter={() => data && setShowDays(true)}
       onMouseLeave={() => setShowDays(false)}
     >
-      {/* Header row */}
       <div className="flex items-center justify-between gap-1">
         <div className="text-[10px] font-mono uppercase tracking-[0.1em] text-[var(--color-muted)] flex items-center gap-1">
           Tips
-          {/* Toast logo dot */}
           <span className="inline-block w-1.5 h-1.5 rounded-full bg-[#FF4C00]" title="Live from Toast" />
         </div>
         <button
@@ -240,8 +167,6 @@ function ToastTipsCard({
           </svg>
         </button>
       </div>
-
-      {/* Value */}
       <div className="font-mono font-semibold text-[20px] leading-tight mt-2 text-[var(--color-text)]">
         {loading ? (
           <span className="inline-block w-4 h-4 border-2 border-[var(--color-border-strong)] border-t-[var(--color-text)] rounded-full animate-spin align-middle" />
@@ -251,8 +176,6 @@ function ToastTipsCard({
           formatCurrency(data?.total ?? 0)
         )}
       </div>
-
-      {/* Sublabel */}
       <div className="text-[10px] text-[var(--color-muted)] mt-1 whitespace-nowrap">
         {error ? (
           <span className="text-[var(--color-warn)]" title={error}>Toast unavailable</span>
@@ -263,7 +186,6 @@ function ToastTipsCard({
         )}
       </div>
 
-      {/* Per-day breakdown tooltip */}
       {showDays && data && (
         <div className="absolute bottom-full left-0 mb-2 z-50 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-lg shadow-xl px-3 py-2.5 min-w-[160px]">
           <div className="text-[9px] font-mono uppercase tracking-wider text-[var(--color-muted)] mb-1.5">Tips by day</div>

@@ -18,8 +18,14 @@ import CheatSheet from './CheatSheet';
 import LaborBreakdownBar from './LaborBreakdownBar';
 import MigrationBanner from './MigrationBanner';
 
+export interface ToastTipsData {
+  total: number;
+  byDay: Record<string, number>;
+  fetchedAt: string;
+}
+
 export default function Scheduler() {
-  const { isLoading, clearWeek, currentWeekShifts, deleteShift, copyWeek, pasteWeek } = useSchedulerContext();
+  const { isLoading, clearWeek, currentWeekShifts, deleteShift, copyWeek, pasteWeek, weekStart } = useSchedulerContext();
   const toast = useToast();
   const confirm = useConfirm();
 
@@ -29,15 +35,41 @@ export default function Scheduler() {
   const [editShiftId, setEditShiftId] = useState<string | null>(null);
   const [prefillEmpId, setPrefillEmpId] = useState<string | null>(null);
   const [prefillDate, setPrefillDate] = useState<string | null>(null);
-  // Bump this every time we open the shift modal so React remounts it with
-  // fresh lazy-init state — prevents state-reset timing bugs when user hits
-  // Enter rapidly after opening.
   const [shiftModalKey, setShiftModalKey] = useState(0);
 
   const [isPublishOpen, setPublishOpen] = useState(false);
   const [isSaveTemplateOpen, setSaveTemplateOpen] = useState(false);
   const [isApplyTemplateOpen, setApplyTemplateOpen] = useState(false);
   const [isCheatSheetOpen, setCheatSheetOpen] = useState(false);
+
+  // Toast tips — fetched once here, shared to both grid and breakdown bar
+  const [toastTips, setToastTips] = useState<ToastTipsData | null>(null);
+  const [tipsLoading, setTipsLoading] = useState(false);
+  const [tipsError, setTipsError] = useState<string | null>(null);
+
+  const fetchTips = useCallback(async () => {
+    if (!weekStart) return;
+    setTipsLoading(true);
+    setTipsError(null);
+    try {
+      const res = await fetch(`/api/toast-tips?week=${weekStart}`);
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to load tips');
+      setToastTips(data as ToastTipsData);
+    } catch (err) {
+      setTipsError((err as Error).message);
+    } finally {
+      setTipsLoading(false);
+    }
+  }, [weekStart]);
+
+  useEffect(() => { fetchTips(); }, [fetchTips]);
+
+  // Auto-refresh every 10 min
+  useEffect(() => {
+    const id = setInterval(fetchTips, 10 * 60 * 1000);
+    return () => clearInterval(id);
+  }, [fetchTips]);
 
   const handleAddShift = useCallback((empId: string | null = null, date: string | null = null) => {
     setEditShiftId(null);
@@ -113,7 +145,7 @@ export default function Scheduler() {
     }
   }, [pasteWeek, toast]);
 
-  // App-level keyboard shortcuts (cheat sheet, drawer, publish)
+  // App-level keyboard shortcuts
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       const target = e.target as HTMLElement | null;
@@ -121,19 +153,16 @@ export default function Scheduler() {
         const tag = target.tagName;
         if (tag === 'INPUT' || tag === 'SELECT' || tag === 'TEXTAREA' || target.isContentEditable) return;
       }
-      // Cheat sheet: ? key (Shift+/ on most layouts)
       if (e.key === '?' && !document.querySelector('[data-overlay]')) {
         e.preventDefault();
         setCheatSheetOpen(true);
         return;
       }
-      // Cmd/Ctrl + Shift + S → Staff drawer
       if ((e.metaKey || e.ctrlKey) && e.shiftKey && (e.key === 's' || e.key === 'S')) {
         e.preventDefault();
         setDrawerOpen(d => !d);
         return;
       }
-      // Cmd/Ctrl + Shift + P → Publish
       if ((e.metaKey || e.ctrlKey) && e.shiftKey && (e.key === 'p' || e.key === 'P')) {
         e.preventDefault();
         if (currentWeekShifts.length) setPublishOpen(true);
@@ -174,9 +203,16 @@ export default function Scheduler() {
           onAddShift={handleAddShift}
           onEditShift={handleEditShift}
           onDeleteShift={handleDeleteShift}
+          toastTips={toastTips}
+          tipsLoading={tipsLoading}
         />
       </div>
-      <LaborBreakdownBar />
+      <LaborBreakdownBar
+        toastTips={toastTips}
+        tipsLoading={tipsLoading}
+        tipsError={tipsError}
+        onRefreshTips={fetchTips}
+      />
 
       <StaffDrawer
         isOpen={isDrawerOpen}

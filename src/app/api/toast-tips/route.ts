@@ -12,14 +12,13 @@ async function getToastToken(): Promise<string> {
       clientSecret: process.env.TOAST_CLIENT_SECRET,
       userAccessType: 'TOAST_MACHINE_CLIENT',
     }),
-    next: { revalidate: 0 },
   });
   if (!res.ok) throw new Error(`Toast auth failed: ${res.status}`);
   const body = await res.json();
   return body.token.accessToken as string;
 }
 
-// YYYYMMDD string from ISO date YYYY-MM-DD
+// YYYYMMDD from YYYY-MM-DD
 function toBusinessDate(iso: string): string {
   return iso.replace(/-/g, '');
 }
@@ -31,10 +30,40 @@ function addDays(iso: string, n: number): string {
   return d.toISOString().slice(0, 10);
 }
 
+// Fetch ALL pages for a business date, following Link: rel="next"
+async function fetchDayTips(headers: Record<string, string>, businessDate: string): Promise<number> {
+  let tips = 0;
+  let url: string | null = `${BASE}/orders/v2/ordersBulk?businessDate=${businessDate}&pageSize=100`;
+
+  while (url) {
+    const pageUrl: string = url;
+    const pageRes: Response = await fetch(pageUrl, { headers });
+    if (!pageRes.ok) break;
+    const orders: unknown = await pageRes.json();
+    if (!Array.isArray(orders)) break;
+
+    for (const order of orders) {
+      for (const check of (order as { checks?: { payments?: { tipAmount?: number }[] }[] }).checks ?? []) {
+        for (const payment of check.payments ?? []) {
+          const t = payment.tipAmount;
+          if (typeof t === 'number' && t > 0) tips += t;
+        }
+      }
+    }
+
+    // Parse Link header for next page
+    const linkHeader = pageRes.headers.get('link') ?? '';
+    const nextMatch = linkHeader.match(/<([^>]+)>;\s*rel="next"/);
+    url = nextMatch ? nextMatch[1] : null;
+  }
+
+  return Math.round(tips * 100) / 100;
+}
+
 const DAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
 export async function GET(req: NextRequest) {
-  const week = req.nextUrl.searchParams.get('week'); // YYYY-MM-DD (Monday)
+  const week = req.nextUrl.searchParams.get('week');
   if (!week) return NextResponse.json({ error: 'week param required' }, { status: 400 });
 
   if (!process.env.TOAST_CLIENT_ID || !process.env.TOAST_CLIENT_SECRET || !process.env.TOAST_RESTAURANT_GUID) {
@@ -49,34 +78,15 @@ export async function GET(req: NextRequest) {
       'Content-Type': 'application/json',
     };
 
-    // Fetch all 7 days in parallel
     const days = Array.from({ length: 7 }, (_, i) => addDays(week, i));
     const results = await Promise.allSettled(
-      days.map(async (iso) => {
-        const bd = toBusinessDate(iso);
-        const res = await fetch(`${BASE}/orders/v2/ordersBulk?businessDate=${bd}`, { headers });
-        if (!res.ok) return { iso, tips: 0 };
-        const orders = await res.json();
-        if (!Array.isArray(orders)) return { iso, tips: 0 };
-
-        let dayTips = 0;
-        for (const order of orders) {
-          for (const check of order.checks ?? []) {
-            for (const payment of check.payments ?? []) {
-              const t = payment.tipAmount;
-              if (typeof t === 'number' && t > 0) dayTips += t;
-            }
-          }
-        }
-        // Toast amounts are in cents? No — they're already dollars (float). Keep as-is.
-        return { iso, tips: Math.round(dayTips * 100) / 100 };
-      })
+      days.map(iso => fetchDayTips(headers, toBusinessDate(iso)))
     );
 
     const byDay: Record<string, number> = {};
     let total = 0;
     results.forEach((r, i) => {
-      const tips = r.status === 'fulfilled' ? r.value.tips : 0;
+      const tips = r.status === 'fulfilled' ? r.value : 0;
       byDay[DAY_LABELS[i]] = tips;
       total += tips;
     });

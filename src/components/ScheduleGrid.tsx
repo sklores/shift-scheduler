@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useSchedulerContext } from '@/context/SchedulerContext';
 import { DAYS, ROLE_COLORS } from '@/lib/data/types';
 import { isToday, getDateForCell, toISODate } from '@/lib/utils/week';
@@ -8,25 +8,37 @@ import { employeeWeeklyHours, employeeWeeklyCost, formatCurrency } from '@/lib/u
 import { calcHours } from '@/lib/utils/time';
 import { isOvertime, OT_THRESHOLD_HOURS } from '@/lib/utils/conflicts';
 import ShiftBlock from './ShiftBlock';
+import type { ToastTipsData } from './Scheduler';
+
+const DAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+const EMP_ORDER_KEY = 'shift_employee_order';
 
 interface ScheduleGridProps {
   onAddShift: (empId: string | null, date: string | null) => void;
   onEditShift: (shiftId: string) => void;
   onDeleteShift: (shiftId: string) => void;
+  toastTips?: ToastTipsData | null;
+  tipsLoading?: boolean;
 }
 
 function initials(name: string): string {
   return name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
 }
 
+function loadOrder(): string[] {
+  try { return JSON.parse(localStorage.getItem(EMP_ORDER_KEY) ?? '[]'); } catch { return []; }
+}
+
+function saveOrder(ids: string[]) {
+  localStorage.setItem(EMP_ORDER_KEY, JSON.stringify(ids));
+}
+
 export default function ScheduleGrid(props: ScheduleGridProps) {
   return (
     <>
-      {/* Desktop grid */}
       <div className="hidden md:flex flex-1 overflow-hidden">
         <DesktopGrid {...props} />
       </div>
-      {/* Mobile list */}
       <div className="flex md:hidden flex-1 overflow-auto">
         <MobileDayList {...props} />
       </div>
@@ -37,147 +49,127 @@ export default function ScheduleGrid(props: ScheduleGridProps) {
 // ──────────────────────────────
 // Desktop Grid
 // ──────────────────────────────
-interface ShiftClipboard {
-  startTime: string;
-  endTime: string;
-  note: string;
-}
+interface ShiftClipboard { startTime: string; endTime: string; note: string; }
 
-function DesktopGrid({ onAddShift, onEditShift, onDeleteShift }: ScheduleGridProps) {
+function DesktopGrid({ onAddShift, onEditShift, onDeleteShift, toastTips, tipsLoading }: ScheduleGridProps) {
   const { employees, weekDates, weekOffset, currentWeekShifts, getShiftsForCell, moveShift, changeWeek, conflictingShiftIds, addShift, isDateBlocked, getBlocksForEmployee, removeAvailabilityBlock } = useSchedulerContext();
+
+  // Shift drag state
   const [dragTarget, setDragTarget] = useState<string | null>(null);
+
+  // Employee row drag-to-reorder state
+  const [rowDragSrc, setRowDragSrc] = useState<string | null>(null);
+  const [rowDragOver, setRowDragOver] = useState<string | null>(null);
+
+  // Employee order (persisted in localStorage)
+  const [empOrder, setEmpOrder] = useState<string[]>([]);
+  useEffect(() => { setEmpOrder(loadOrder()); }, []);
+
+  const sortedEmployees = useMemo(() => {
+    if (!empOrder.length) return employees;
+    return [...employees].sort((a, b) => {
+      const ai = empOrder.indexOf(a.id);
+      const bi = empOrder.indexOf(b.id);
+      return (ai === -1 ? 9999 : ai) - (bi === -1 ? 9999 : bi);
+    });
+  }, [employees, empOrder]);
+
+  const handleRowDrop = (targetId: string) => {
+    if (!rowDragSrc || rowDragSrc === targetId) { setRowDragSrc(null); setRowDragOver(null); return; }
+    const ids = sortedEmployees.map(e => e.id);
+    const srcIdx = ids.indexOf(rowDragSrc);
+    const dstIdx = ids.indexOf(targetId);
+    ids.splice(srcIdx, 1);
+    ids.splice(dstIdx, 0, rowDragSrc);
+    setEmpOrder(ids);
+    saveOrder(ids);
+    setRowDragSrc(null);
+    setRowDragOver(null);
+  };
+
   const [focusedCell, setFocusedCell] = useState<{ row: number; col: number }>({ row: 0, col: 0 });
   const [clipboard, setClipboard] = useState<ShiftClipboard | null>(null);
   const cellRefs = useRef<Map<string, HTMLDivElement>>(new Map());
 
-  // Clamp focus when employees list shrinks
   useEffect(() => {
-    if (employees.length === 0) return;
+    if (sortedEmployees.length === 0) return;
     setFocusedCell(f => ({
-      row: Math.min(f.row, employees.length - 1),
+      row: Math.min(f.row, sortedEmployees.length - 1),
       col: Math.max(0, Math.min(6, f.col)),
     }));
-  }, [employees.length]);
+  }, [sortedEmployees.length]);
 
-  // Keyboard navigation
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
-      // Skip if user is typing in an input/select/textarea
       const target = e.target as HTMLElement | null;
       if (target) {
         const tag = target.tagName;
         if (tag === 'INPUT' || tag === 'SELECT' || tag === 'TEXTAREA' || target.isContentEditable) return;
       }
-      // Skip if any modal/drawer/confirm is open
       if (document.querySelector('[data-overlay]')) return;
-      if (employees.length === 0) return;
+      if (sortedEmployees.length === 0) return;
 
       switch (e.key) {
-        case 'ArrowLeft':
-          e.preventDefault();
-          setFocusedCell(f => f.col === 0 ? f : { ...f, col: f.col - 1 });
-          break;
-        case 'ArrowRight':
-          e.preventDefault();
-          setFocusedCell(f => f.col === 6 ? f : { ...f, col: f.col + 1 });
-          break;
-        case 'ArrowUp':
-          e.preventDefault();
-          setFocusedCell(f => f.row === 0 ? f : { ...f, row: f.row - 1 });
-          break;
-        case 'ArrowDown':
-          e.preventDefault();
-          setFocusedCell(f => f.row >= employees.length - 1 ? f : { ...f, row: f.row + 1 });
-          break;
+        case 'ArrowLeft': e.preventDefault(); setFocusedCell(f => f.col === 0 ? f : { ...f, col: f.col - 1 }); break;
+        case 'ArrowRight': e.preventDefault(); setFocusedCell(f => f.col === 6 ? f : { ...f, col: f.col + 1 }); break;
+        case 'ArrowUp': e.preventDefault(); setFocusedCell(f => f.row === 0 ? f : { ...f, row: f.row - 1 }); break;
+        case 'ArrowDown': e.preventDefault(); setFocusedCell(f => f.row >= sortedEmployees.length - 1 ? f : { ...f, row: f.row + 1 }); break;
         case 'Enter': {
           e.preventDefault();
-          const emp = employees[focusedCell.row];
+          const emp = sortedEmployees[focusedCell.row];
           if (emp) onAddShift(emp.id, getDateForCell(weekOffset, focusedCell.col));
           break;
         }
-        case 'e':
-        case 'E': {
+        case 'e': case 'E': {
           if (e.metaKey || e.ctrlKey || e.altKey) return;
-          const emp = employees[focusedCell.row];
+          const emp = sortedEmployees[focusedCell.row];
           if (!emp) return;
           const date = getDateForCell(weekOffset, focusedCell.col);
           const cellShifts = currentWeekShifts.filter(s => s.employeeId === emp.id && s.date === date);
-          if (cellShifts.length > 0) {
-            e.preventDefault();
-            onEditShift(cellShifts[0].id);
-          }
+          if (cellShifts.length > 0) { e.preventDefault(); onEditShift(cellShifts[0].id); }
           break;
         }
-        case 'Delete':
-        case 'Backspace': {
-          const emp = employees[focusedCell.row];
+        case 'Delete': case 'Backspace': {
+          const emp = sortedEmployees[focusedCell.row];
           if (!emp) return;
           const date = getDateForCell(weekOffset, focusedCell.col);
           const cellShifts = currentWeekShifts.filter(s => s.employeeId === emp.id && s.date === date);
-          if (cellShifts.length > 0) {
-            e.preventDefault();
-            onDeleteShift(cellShifts[0].id);
-          }
+          if (cellShifts.length > 0) { e.preventDefault(); onDeleteShift(cellShifts[0].id); }
           break;
         }
-        case 'c':
-        case 'C': {
+        case 'c': case 'C': {
           if (e.metaKey || e.ctrlKey || e.altKey) return;
-          const emp = employees[focusedCell.row];
+          const emp = sortedEmployees[focusedCell.row];
           if (!emp) return;
           const date = getDateForCell(weekOffset, focusedCell.col);
           const cellShifts = currentWeekShifts.filter(s => s.employeeId === emp.id && s.date === date);
-          if (cellShifts.length > 0) {
-            e.preventDefault();
-            const s = cellShifts[0];
-            setClipboard({ startTime: s.startTime, endTime: s.endTime, note: s.note });
-          }
+          if (cellShifts.length > 0) { e.preventDefault(); const s = cellShifts[0]; setClipboard({ startTime: s.startTime, endTime: s.endTime, note: s.note }); }
           break;
         }
-        case 'v':
-        case 'V': {
+        case 'v': case 'V': {
           if (e.metaKey || e.ctrlKey || e.altKey) return;
           if (!clipboard) return;
-          const emp = employees[focusedCell.row];
+          const emp = sortedEmployees[focusedCell.row];
           if (!emp) return;
           e.preventDefault();
-          addShift({
-            employeeId: emp.id,
-            date: getDateForCell(weekOffset, focusedCell.col),
-            startTime: clipboard.startTime,
-            endTime: clipboard.endTime,
-            note: clipboard.note,
-          });
+          addShift({ employeeId: emp.id, date: getDateForCell(weekOffset, focusedCell.col), startTime: clipboard.startTime, endTime: clipboard.endTime, note: clipboard.note });
           break;
         }
-        case '[':
-          e.preventDefault();
-          changeWeek(-1);
-          break;
-        case ']':
-          e.preventDefault();
-          changeWeek(1);
-          break;
+        case '[': e.preventDefault(); changeWeek(-1); break;
+        case ']': e.preventDefault(); changeWeek(1); break;
       }
     };
     document.addEventListener('keydown', handler);
     return () => document.removeEventListener('keydown', handler);
-  }, [employees, currentWeekShifts, focusedCell, weekOffset, onAddShift, onEditShift, onDeleteShift, changeWeek, addShift, clipboard]);
+  }, [sortedEmployees, currentWeekShifts, focusedCell, weekOffset, onAddShift, onEditShift, onDeleteShift, changeWeek, addShift, clipboard]);
 
-  // Scroll focused cell into view when focus moves
   useEffect(() => {
     const key = `${focusedCell.row}-${focusedCell.col}`;
     const el = cellRefs.current.get(key);
-    if (el) {
-      el.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: 'smooth' });
-    }
+    if (el) el.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: 'smooth' });
   }, [focusedCell]);
 
-  if (employees.length === 0) {
-    return (
-      <EmptyState />
-    );
-  }
+  if (sortedEmployees.length === 0) return <EmptyState />;
 
   return (
     <div className="flex-1 overflow-auto">
@@ -200,18 +192,10 @@ function DesktopGrid({ onAddShift, onEditShift, onDeleteShift }: ScheduleGridPro
           const iso = toISODate(date);
           const dayShifts = currentWeekShifts.filter(s => s.date === iso);
           const dayHours = dayShifts.reduce((sum, s) => sum + calcHours(s.startTime, s.endTime), 0);
-
           return (
-            <div
-              key={i}
-              className="border-r border-b border-[var(--color-border)] last:border-r-0 bg-[var(--color-surface)] sticky top-0 z-10 px-3 py-2.5 text-center"
-            >
-              <div className="font-mono text-[10px] uppercase tracking-[0.12em] text-[var(--color-muted)]">
-                {DAYS[i]}
-              </div>
-              <div className={`text-[20px] font-semibold leading-tight mt-0.5 ${today ? 'text-[var(--color-accent)]' : 'text-[var(--color-text)]'}`}>
-                {date.getDate()}
-              </div>
+            <div key={i} className="border-r border-b border-[var(--color-border)] last:border-r-0 bg-[var(--color-surface)] sticky top-0 z-10 px-3 py-2.5 text-center">
+              <div className="font-mono text-[10px] uppercase tracking-[0.12em] text-[var(--color-muted)]">{DAYS[i]}</div>
+              <div className={`text-[20px] font-semibold leading-tight mt-0.5 ${today ? 'text-[var(--color-accent)]' : 'text-[var(--color-text)]'}`}>{date.getDate()}</div>
               <div className="font-mono text-[10px] text-[var(--color-muted)] mt-0.5 h-3.5">
                 {dayShifts.length > 0 ? `${dayHours.toFixed(0)}h · ${dayShifts.length}` : ''}
               </div>
@@ -220,14 +204,51 @@ function DesktopGrid({ onAddShift, onEditShift, onDeleteShift }: ScheduleGridPro
         })}
 
         {/* Employee rows */}
-        {employees.map((emp, rowIdx) => {
+        {sortedEmployees.map((emp, rowIdx) => {
           const weeklyHrs = employeeWeeklyHours(emp.id, currentWeekShifts);
           const weeklyCost = employeeWeeklyCost(emp.id, currentWeekShifts, employees);
+          const isRowDragSrc = rowDragSrc === emp.id;
+          const isRowDragTarget = rowDragOver === emp.id && rowDragSrc !== emp.id;
 
           return (
             <React.Fragment key={emp.id}>
-              {/* Sticky staff cell */}
-              <div className="sticky left-0 z-[9] bg-[var(--color-surface)] border-r border-b border-[var(--color-border)] px-4 flex items-center gap-3 hover:bg-[var(--color-surface-2)] transition-colors">
+              {/* Sticky staff cell — draggable for row reorder */}
+              <div
+                className={`sticky left-0 z-[9] bg-[var(--color-surface)] border-r border-b border-[var(--color-border)] px-3 flex items-center gap-2.5 transition-colors cursor-grab active:cursor-grabbing
+                  ${isRowDragSrc ? 'opacity-40' : ''}
+                  ${isRowDragTarget ? 'border-t-2 border-t-[var(--color-accent)]' : 'hover:bg-[var(--color-surface-2)]'}
+                `}
+                draggable
+                onDragStart={(e) => {
+                  e.dataTransfer.setData('text/employee-id', emp.id);
+                  e.dataTransfer.effectAllowed = 'move';
+                  setRowDragSrc(emp.id);
+                }}
+                onDragEnd={() => { setRowDragSrc(null); setRowDragOver(null); }}
+                onDragOver={(e) => {
+                  if (!e.dataTransfer.types.includes('text/employee-id')) return;
+                  e.preventDefault();
+                  e.dataTransfer.dropEffect = 'move';
+                  setRowDragOver(emp.id);
+                }}
+                onDragLeave={(e) => {
+                  if (!(e.currentTarget as HTMLElement).contains(e.relatedTarget as Node)) {
+                    setRowDragOver(prev => prev === emp.id ? null : prev);
+                  }
+                }}
+                onDrop={(e) => {
+                  const srcId = e.dataTransfer.getData('text/employee-id');
+                  if (srcId) { e.preventDefault(); handleRowDrop(emp.id); }
+                }}
+              >
+                {/* Grip handle */}
+                <div className="text-[var(--color-border-strong)] flex-shrink-0 opacity-50 hover:opacity-100" title="Drag to reorder">
+                  <svg width="10" height="14" viewBox="0 0 10 14" fill="currentColor">
+                    <circle cx="2.5" cy="2.5" r="1.5"/><circle cx="7.5" cy="2.5" r="1.5"/>
+                    <circle cx="2.5" cy="7" r="1.5"/><circle cx="7.5" cy="7" r="1.5"/>
+                    <circle cx="2.5" cy="11.5" r="1.5"/><circle cx="7.5" cy="11.5" r="1.5"/>
+                  </svg>
+                </div>
                 <div
                   className="w-8 h-8 rounded-full flex items-center justify-center text-[11px] font-semibold text-white flex-shrink-0 ring-2 ring-white"
                   style={{ backgroundColor: ROLE_COLORS[emp.role] }}
@@ -240,13 +261,11 @@ function DesktopGrid({ onAddShift, onEditShift, onDeleteShift }: ScheduleGridPro
                 </div>
                 <div className="text-right font-mono text-[11px] flex-shrink-0">
                   <div className={`flex items-center gap-1 justify-end ${isOvertime(weeklyHrs) ? 'text-[var(--color-warn)] font-semibold' : 'text-[var(--color-muted)]'}`}
-                       title={isOvertime(weeklyHrs) ? `${weeklyHrs.toFixed(0)}h — ${(weeklyHrs - OT_THRESHOLD_HOURS).toFixed(0)}h over 40` : undefined}>
+                    title={isOvertime(weeklyHrs) ? `${weeklyHrs.toFixed(0)}h — ${(weeklyHrs - OT_THRESHOLD_HOURS).toFixed(0)}h over 40` : undefined}>
                     {isOvertime(weeklyHrs) && <span aria-label="Overtime">&#9888;</span>}
                     <span>{weeklyHrs.toFixed(0)}h</span>
                   </div>
-                  <div className="text-[var(--color-accent)] font-semibold">
-                    {formatCurrency(weeklyCost)}
-                  </div>
+                  <div className="text-[var(--color-accent)] font-semibold">{formatCurrency(weeklyCost)}</div>
                 </div>
               </div>
 
@@ -267,10 +286,7 @@ function DesktopGrid({ onAddShift, onEditShift, onDeleteShift }: ScheduleGridPro
                 return (
                   <div
                     key={cellKey}
-                    ref={(el) => {
-                      if (el) cellRefs.current.set(refKey, el);
-                      else cellRefs.current.delete(refKey);
-                    }}
+                    ref={(el) => { if (el) cellRefs.current.set(refKey, el); else cellRefs.current.delete(refKey); }}
                     className={`border-r border-b border-[var(--color-border)] last:border-r-0 p-1.5 transition-colors overflow-hidden relative ${
                       isAlt ? 'bg-[#fafaf7]' : 'bg-[var(--color-surface)]'
                     } ${isDragOver ? 'drag-over' : ''} ${isFocused ? 'kbd-focused' : ''}`}
@@ -278,20 +294,19 @@ function DesktopGrid({ onAddShift, onEditShift, onDeleteShift }: ScheduleGridPro
                       const target = e.target as HTMLElement;
                       if (target.closest('[data-shift-block]') || target.closest('[data-add-btn]')) return;
                       setFocusedCell({ row: rowIdx, col: dayIdx });
-                      if (cellShifts.length === 0) {
-                        onAddShift(emp.id, cellDate);
-                      }
+                      if (cellShifts.length === 0) onAddShift(emp.id, cellDate);
                     }}
                     onDoubleClick={() => onAddShift(emp.id, cellDate)}
                     onDragOver={(e) => {
+                      // Ignore employee row drags
+                      if (e.dataTransfer.types.includes('text/employee-id')) return;
                       e.preventDefault();
                       e.dataTransfer.dropEffect = 'move';
                       if (dragTarget !== cellKey) setDragTarget(cellKey);
                     }}
-                    onDragLeave={() => {
-                      setDragTarget(prev => prev === cellKey ? null : prev);
-                    }}
+                    onDragLeave={() => { setDragTarget(prev => prev === cellKey ? null : prev); }}
                     onDrop={async (e) => {
+                      if (e.dataTransfer.types.includes('text/employee-id')) return;
                       e.preventDefault();
                       setDragTarget(null);
                       const shiftId = e.dataTransfer.getData('text/shift-id');
@@ -299,20 +314,14 @@ function DesktopGrid({ onAddShift, onEditShift, onDeleteShift }: ScheduleGridPro
                     }}
                   >
                     {blocked && blockRecord ? (
-                      /* Unavailable block */
                       <div className="group relative flex flex-col gap-1">
-                        <div
-                          className="w-full rounded-md bg-[#1F1B16] text-white text-[10.5px] font-semibold text-center py-1.5 px-2 flex items-center justify-between gap-1 cursor-pointer select-none"
-                          title="Click × to remove"
-                        >
+                        <div className="w-full rounded-md bg-[#1F1B16] text-white text-[10.5px] font-semibold text-center py-1.5 px-2 flex items-center justify-between gap-1 cursor-pointer select-none" title="Click × to remove">
                           <span className="flex-1 text-center uppercase tracking-wide">Unavailable</span>
                           <button
                             onClick={(e) => { e.stopPropagation(); removeAvailabilityBlock(blockRecord.id); }}
                             className="opacity-0 group-hover:opacity-100 transition-opacity text-white/60 hover:text-white text-base leading-none flex-shrink-0 -mr-0.5"
                             aria-label="Remove unavailable"
-                          >
-                            &times;
-                          </button>
+                          >&times;</button>
                         </div>
                         {cellShifts.length > 0 && (
                           <div className="flex flex-col gap-1 max-h-[40px] overflow-auto pr-0.5">
@@ -333,15 +342,45 @@ function DesktopGrid({ onAddShift, onEditShift, onDeleteShift }: ScheduleGridPro
                           data-add-btn
                           className="block w-full border border-dashed border-[var(--color-border-strong)] text-[var(--color-muted)] rounded-md text-[11px] text-center py-[3px] mt-1 hover:border-[var(--color-accent)] hover:text-[var(--color-accent)] hover:bg-[var(--color-accent-subtle)] transition-all"
                           onClick={(e) => { e.stopPropagation(); onAddShift(emp.id, cellDate); }}
-                        >
-                          +
-                        </button>
+                        >+</button>
                       </>
                     )}
                   </div>
                 );
               })}
             </React.Fragment>
+          );
+        })}
+
+        {/* Tips row — pinned at bottom, shows per-day totals from Toast */}
+        <div className="sticky left-0 z-[9] bg-[var(--color-surface-2)] border-r border-b border-[var(--color-border)] px-4 flex items-center gap-3">
+          <div>
+            <div className="text-[10px] font-mono uppercase tracking-[0.1em] text-[var(--color-muted)] flex items-center gap-1 mb-1">
+              Tips
+              <span className="inline-block w-1.5 h-1.5 rounded-full bg-[#FF4C00]" title="Live from Toast" />
+            </div>
+            <div className="font-mono text-[15px] font-semibold text-[var(--color-text)]">
+              {tipsLoading ? (
+                <span className="inline-block w-3.5 h-3.5 border-2 border-[var(--color-border-strong)] border-t-[var(--color-text)] rounded-full animate-spin align-middle" />
+              ) : toastTips ? (
+                formatCurrency(toastTips.total)
+              ) : '—'}
+            </div>
+            <div className="text-[10px] text-[var(--color-muted)] mt-0.5">Weekly total</div>
+          </div>
+        </div>
+        {Array.from({ length: 7 }, (_, i) => {
+          const dayTips = toastTips?.byDay[DAY_LABELS[i]] ?? null;
+          return (
+            <div key={i} className="border-r border-b border-[var(--color-border)] last:border-r-0 bg-[var(--color-surface-2)] flex items-center justify-center px-2">
+              {tipsLoading ? (
+                <span className="inline-block w-3 h-3 border-2 border-[var(--color-border-strong)] border-t-[var(--color-muted)] rounded-full animate-spin" />
+              ) : (
+                <span className={`font-mono text-[14px] font-medium ${dayTips && dayTips > 0 ? 'text-[var(--color-text)]' : 'text-[var(--color-border-strong)]'}`}>
+                  {dayTips && dayTips > 0 ? formatCurrency(dayTips) : '—'}
+                </span>
+              )}
+            </div>
           );
         })}
       </div>
@@ -355,9 +394,7 @@ function DesktopGrid({ onAddShift, onEditShift, onDeleteShift }: ScheduleGridPro
 function MobileDayList({ onAddShift, onEditShift, onDeleteShift }: ScheduleGridProps) {
   const { employees, currentWeekShifts, weekDates, weekOffset, getEmployeeById, conflictingShiftIds } = useSchedulerContext();
 
-  if (employees.length === 0) {
-    return <EmptyState />;
-  }
+  if (employees.length === 0) return <EmptyState />;
 
   return (
     <div className="flex-1 w-full pb-20">
@@ -373,32 +410,18 @@ function MobileDayList({ onAddShift, onEditShift, onDeleteShift }: ScheduleGridP
           <div key={dayIdx} className="border-b border-[var(--color-border)]">
             <div className={`px-4 py-3 flex items-baseline justify-between sticky top-0 z-10 ${today ? 'bg-[var(--color-accent-subtle)]' : 'bg-[var(--color-surface-2)]'}`}>
               <div className="flex items-baseline gap-2.5">
-                <div className={`font-mono text-[11px] uppercase tracking-[0.12em] ${today ? 'text-[var(--color-accent)]' : 'text-[var(--color-muted)]'}`}>
-                  {DAYS[dayIdx]}
-                </div>
-                <div className={`text-lg font-semibold ${today ? 'text-[var(--color-accent)]' : 'text-[var(--color-text)]'}`}>
-                  {date.getDate()}
-                </div>
+                <div className={`font-mono text-[11px] uppercase tracking-[0.12em] ${today ? 'text-[var(--color-accent)]' : 'text-[var(--color-muted)]'}`}>{DAYS[dayIdx]}</div>
+                <div className={`text-lg font-semibold ${today ? 'text-[var(--color-accent)]' : 'text-[var(--color-text)]'}`}>{date.getDate()}</div>
               </div>
               <div className="font-mono text-[11px] text-[var(--color-muted)]">
                 {dayShifts.length > 0 ? `${dayHours.toFixed(0)}h · ${dayShifts.length} shifts` : 'No shifts'}
               </div>
             </div>
-
             <div className="px-4 py-3 space-y-2 bg-[var(--color-surface)]">
               {dayShifts.map(shift => {
                 const emp = getEmployeeById(shift.employeeId);
                 return (
-                  <ShiftBlock
-                    key={shift.id}
-                    shift={shift}
-                    employee={emp}
-                    onEdit={onEditShift}
-                    onDelete={onDeleteShift}
-                    showEmployeeName
-                    draggable={false}
-                    conflict={conflictingShiftIds.has(shift.id)}
-                  />
+                  <ShiftBlock key={shift.id} shift={shift} employee={emp} onEdit={onEditShift} onDelete={onDeleteShift} showEmployeeName draggable={false} conflict={conflictingShiftIds.has(shift.id)} />
                 );
               })}
               <button
