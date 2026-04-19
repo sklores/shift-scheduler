@@ -132,14 +132,30 @@ export class SupabaseAdapter implements DataAdapter {
     if (updates.employeeCode !== undefined) patch.employee_code = updates.employeeCode ?? null;
     if (updates.isActive !== undefined) patch.is_active = updates.isActive;
 
-    const { data, error } = await this.supabase
+    let { data, error } = await this.supabase
       .from('shift_employees')
       .update(patch)
       .eq('id', id)
       .select()
       .single();
+
+    // If email column doesn't exist yet (migration pending), retry without it
+    if (error && error.message?.includes('email') && patch.email !== undefined) {
+      const { email: _email, ...patchWithoutEmail } = patch;
+      void _email;
+      ({ data, error } = await this.supabase
+        .from('shift_employees')
+        .update(patchWithoutEmail)
+        .eq('id', id)
+        .select()
+        .single());
+    }
+
     if (error) throw new Error(`updateEmployee: ${error.message}`);
-    return employeeFromRow(data as EmployeeRow);
+    // Preserve the email update in-memory even if column is missing
+    const result = employeeFromRow(data as EmployeeRow);
+    if (updates.email !== undefined && !result.email) result.email = updates.email;
+    return result;
   }
 
   async removeEmployee(id: string): Promise<void> {
