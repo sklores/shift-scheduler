@@ -84,14 +84,10 @@ function PrintContent() {
   }, [loading, error, employees.length]);
 
   if (loading) return (
-    <div style={{ fontFamily: 'system-ui', padding: '48px', textAlign: 'center', color: '#666' }}>
-      Loading schedule…
-    </div>
+    <div style={{ fontFamily: 'system-ui', padding: '48px', textAlign: 'center', color: '#666' }}>Loading schedule…</div>
   );
   if (error) return (
-    <div style={{ fontFamily: 'system-ui', padding: '48px', textAlign: 'center', color: '#333' }}>
-      {error}
-    </div>
+    <div style={{ fontFamily: 'system-ui', padding: '48px', textAlign: 'center', color: '#333' }}>{error}</div>
   );
 
   const dates = weekDates(weekStart);
@@ -100,238 +96,232 @@ function PrintContent() {
   const shiftMap = new Map<string, Shift[]>();
   for (const s of shifts) {
     const key = `${s.employee_id}-${s.shift_date}`;
-    const arr = shiftMap.get(key) ?? [];
-    arr.push(s);
-    shiftMap.set(key, arr);
+    shiftMap.set(key, [...(shiftMap.get(key) ?? []), s]);
   }
 
-  const totalHours  = shifts.reduce((a, s) => a + calcHours(s.start_time, s.end_time), 0);
-  const totalShifts = shifts.length;
+  const totalHours      = shifts.reduce((a, s) => a + calcHours(s.start_time, s.end_time), 0);
+  const totalShifts     = shifts.length;
   const scheduledEmpIds = new Set(shifts.map(s => s.employee_id));
   const scheduledEmps   = employees.filter(e => scheduledEmpIds.has(e.id));
 
   return (
     <>
       <style>{`
-        /* ── Reset ── */
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
         body {
           font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif;
           background: #fff;
           color: #000;
+          font-size: 11px;
         }
 
-        /* ── Screen toolbar (hidden when printing) ── */
-        .no-print { display: flex; }
-        @media print { .no-print { display: none !important; } }
-
-        /* ── Print page setup ── */
-        @page {
-          size: landscape;
-          margin: 12mm 10mm;
-        }
-
-        /* ── Force everything to print as-designed ── */
-        @media print {
-          * {
-            -webkit-print-color-adjust: exact !important;
-            print-color-adjust: exact !important;
-          }
-          body { background: #fff !important; }
-        }
-
-        /* ── Table ── */
-        table { border-collapse: collapse; width: 100%; table-layout: fixed; }
-        th, td {
-          border: 1px solid #bbb;
-          padding: 0;
-          vertical-align: top;
-        }
-        th {
-          border-color: #888;
+        /* ── Screen toolbar ── */
+        .toolbar {
+          display: flex;
+          align-items: center;
+          gap: 12px;
           background: #1a1a1a;
           color: #fff;
+          padding: 10px 20px;
+          position: sticky;
+          top: 0;
+          z-index: 100;
+        }
+        .toolbar-title { font-family: monospace; font-size: 15px; font-weight: 700; }
+        .toolbar-label { font-size: 12px; color: rgba(255,255,255,0.5); flex: 1; }
+        .btn-print {
+          background: #fff; color: #000; border: none; border-radius: 4px;
+          padding: 5px 14px; font-size: 12px; font-weight: 600; cursor: pointer;
+        }
+        .btn-close {
+          background: transparent; color: rgba(255,255,255,0.5);
+          border: 1px solid rgba(255,255,255,0.2); border-radius: 4px;
+          padding: 5px 12px; font-size: 12px; cursor: pointer;
         }
 
-        /* ── Shift pill ── */
-        .shift-pill {
-          border: 1.5px solid #1a1a1a;
-          border-radius: 3px;
-          background: #fff;
-          padding: 3px 5px;
-          margin: 2px;
-          display: block;
+        /* ── Document ── */
+        .doc { padding: 18px 22px; }
+
+        /* ── Header ── */
+        .doc-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: flex-end;
+          padding-bottom: 8px;
+          border-bottom: 1.5px solid #000;
+          margin-bottom: 10px;
         }
+        .doc-title  { font-size: 14px; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; }
+        .doc-week   { font-size: 12px; font-weight: 500; color: #333; margin-top: 2px; }
+        .doc-meta   { font-family: monospace; font-size: 10px; color: #555; text-align: right; line-height: 1.6; }
+
+        /* ── Table: NO fills, hairline rules only ── */
+        table { border-collapse: collapse; width: 100%; table-layout: fixed; }
+
+        th, td {
+          border-right: 0.75px solid #ccc;
+          border-bottom: 0.75px solid #ccc;
+          padding: 0;
+          background: #fff;
+        }
+        th:last-child, td:last-child { border-right: none; }
+        thead tr th { border-top: none; border-bottom: 1px solid #555; }
+        tbody tr:last-child td { border-bottom: none; }
+
+        /* ── Column header ── */
+        .col-staff {
+          text-align: left;
+          padding: 5px 8px;
+          font-size: 8.5px;
+          font-weight: 700;
+          letter-spacing: 0.1em;
+          text-transform: uppercase;
+          color: #555;
+          border-right: 1px solid #555;
+        }
+        .col-day { text-align: center; padding: 4px 3px; }
+        .day-name {
+          font-size: 7.5px;
+          font-weight: 700;
+          letter-spacing: 0.12em;
+          text-transform: uppercase;
+          color: #777;
+        }
+        .day-num {
+          font-size: 17px;
+          font-weight: 800;
+          color: #000;
+          line-height: 1.1;
+          margin-top: 1px;
+        }
+        .day-stats {
+          font-family: monospace;
+          font-size: 7.5px;
+          color: #888;
+          margin-top: 1px;
+        }
+
+        /* ── Employee cell ── */
+        .emp-td { border-right: 1px solid #555; }
+        .emp-inner {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          padding: 5px 7px;
+        }
+        .emp-init {
+          font-size: 9px;
+          font-weight: 800;
+          color: #000;
+          width: 22px;
+          flex-shrink: 0;
+          letter-spacing: 0;
+        }
+        .emp-name { font-size: 11px; font-weight: 700; color: #000; }
+        .emp-role {
+          font-size: 8px;
+          font-weight: 500;
+          color: #777;
+          text-transform: uppercase;
+          letter-spacing: 0.06em;
+          margin-top: 1px;
+        }
+
+        /* ── Shift cell ── */
+        .shift-td { padding: 3px 4px; vertical-align: top; }
+        .shift-entry { padding: 2px 0; }
+        .shift-entry + .shift-entry { border-top: 0.5px solid #e0e0e0; margin-top: 2px; padding-top: 3px; }
         .shift-time {
           font-family: 'Courier New', Courier, monospace;
           font-size: 10.5px;
           font-weight: 700;
           color: #000;
           white-space: nowrap;
-          letter-spacing: -0.02em;
         }
-        .shift-hours {
+        .shift-hrs {
           font-family: 'Courier New', Courier, monospace;
-          font-size: 9px;
-          color: #555;
-          margin-top: 1px;
+          font-size: 8.5px;
+          color: #666;
+          margin-left: 3px;
         }
         .shift-note {
-          font-size: 8.5px;
-          color: #444;
-          margin-top: 1px;
+          font-size: 8px;
+          color: #555;
           font-style: italic;
-        }
-
-        /* ── Employee cell ── */
-        .emp-cell {
-          display: flex;
-          align-items: center;
-          gap: 6px;
-          padding: 6px 8px;
-          min-width: 120px;
-        }
-        .emp-avatar {
-          width: 24px;
-          height: 24px;
-          border-radius: 50%;
-          border: 1.5px solid #1a1a1a;
-          background: #fff;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          font-size: 9px;
-          font-weight: 800;
-          color: #000;
-          flex-shrink: 0;
-          letter-spacing: 0;
-        }
-        .emp-name {
-          font-size: 11.5px;
-          font-weight: 700;
-          color: #000;
+          margin-top: 1px;
           white-space: nowrap;
           overflow: hidden;
           text-overflow: ellipsis;
         }
-        .emp-role {
-          font-size: 9px;
-          color: #555;
-          text-transform: uppercase;
-          letter-spacing: 0.06em;
-          margin-top: 1px;
+
+        /* ── Empty cell ── */
+        .empty-td {
+          text-align: center;
+          vertical-align: middle;
+          padding: 6px;
+          font-size: 11px;
+          color: #ddd;
         }
 
-        /* ── Day header cell ── */
-        .day-header {
-          text-align: center;
-          padding: 5px 4px;
-        }
-        .day-label {
+        /* ── Footer ── */
+        .doc-footer {
+          margin-top: 8px;
           font-size: 8.5px;
-          font-weight: 600;
-          letter-spacing: 0.12em;
-          text-transform: uppercase;
-          color: #ccc;
-        }
-        .day-num {
-          font-size: 18px;
-          font-weight: 800;
-          color: #fff;
-          line-height: 1.1;
-          margin-top: 1px;
-        }
-        .day-meta {
-          font-family: 'Courier New', Courier, monospace;
-          font-size: 8px;
           color: #aaa;
-          margin-top: 2px;
+          text-align: right;
+          font-family: monospace;
         }
 
-        /* ── Empty cell dash ── */
-        .empty-cell {
-          text-align: center;
-          padding: 10px 6px;
-          color: #ccc;
-          font-size: 13px;
+        /* ── Print ── */
+        @page { size: landscape; margin: 10mm 8mm; }
+        @media print {
+          .toolbar { display: none !important; }
+          body { font-size: 10px; }
+          * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
         }
-
-        /* ── Day cells ── */
-        .day-cell { padding: 2px; vertical-align: top; }
-        tr:nth-child(even) td { background: #f5f5f5; }
-        tr:nth-child(even) .shift-pill { background: #fff; }
       `}</style>
 
       {/* Screen toolbar */}
-      <div className="no-print" style={{
-        background: '#1a1a1a', color: '#fff',
-        padding: '10px 20px', alignItems: 'center', gap: '14px',
-        position: 'sticky', top: 0, zIndex: 100,
-      }}>
-        <span style={{ fontFamily: 'monospace', fontSize: '16px', fontWeight: 700, letterSpacing: '-0.02em' }}>
-          shift
-        </span>
-        <span style={{ fontSize: '13px', color: 'rgba(255,255,255,0.5)', flex: 1 }}>
-          {label} — B&amp;W print preview
-        </span>
-        <button
-          onClick={() => window.print()}
-          style={{ background: '#fff', color: '#000', border: 'none', borderRadius: '5px', padding: '6px 16px', fontSize: '13px', fontWeight: 600, cursor: 'pointer' }}
-        >
-          Print
-        </button>
-        <button
-          onClick={() => window.close()}
-          style={{ background: 'transparent', color: 'rgba(255,255,255,0.6)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '5px', padding: '6px 12px', fontSize: '13px', cursor: 'pointer' }}
-        >
-          Close
-        </button>
+      <div className="toolbar">
+        <span className="toolbar-title">shift</span>
+        <span className="toolbar-label">{label} — B&amp;W print preview</span>
+        <button className="btn-print" onClick={() => window.print()}>Print</button>
+        <button className="btn-close" onClick={() => window.close()}>Close</button>
       </div>
 
-      {/* Document */}
-      <div style={{ padding: '20px 24px' }}>
-
+      <div className="doc">
         {/* Header */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '12px', borderBottom: '2px solid #1a1a1a', paddingBottom: '10px' }}>
+        <div className="doc-header">
           <div>
-            <div style={{ fontFamily: 'monospace', fontSize: '20px', fontWeight: 800, letterSpacing: '-0.03em', color: '#000' }}>
-              SHIFT SCHEDULE
-            </div>
-            <div style={{ fontSize: '14px', fontWeight: 600, color: '#000', marginTop: '2px' }}>
-              Week of {label}
-            </div>
+            <div className="doc-title">Shift Schedule</div>
+            <div className="doc-week">Week of {label}</div>
           </div>
-          <div style={{ textAlign: 'right', fontFamily: 'monospace', fontSize: '11px', color: '#444', lineHeight: 1.6 }}>
-            <div>
-              <strong>{totalShifts}</strong> shifts &nbsp;·&nbsp;
-              <strong>{totalHours.toFixed(0)}h</strong> total &nbsp;·&nbsp;
-              <strong>{scheduledEmps.length}</strong> staff
-            </div>
-            <div style={{ color: '#888', fontSize: '10px' }}>schedule.anddone.ai</div>
+          <div className="doc-meta">
+            <div><strong>{totalShifts}</strong> shifts &nbsp;·&nbsp; <strong>{totalHours.toFixed(0)}h</strong> total &nbsp;·&nbsp; <strong>{scheduledEmps.length}</strong> staff</div>
+            <div style={{ color: '#aaa' }}>schedule.anddone.ai</div>
           </div>
         </div>
 
         {/* Grid */}
         <table>
           <colgroup>
-            <col style={{ width: '130px' }} />
+            <col style={{ width: '120px' }} />
             {dates.map((_, i) => <col key={i} />)}
           </colgroup>
           <thead>
             <tr>
-              <th style={{ textAlign: 'left', padding: '6px 8px', fontSize: '9px', letterSpacing: '0.12em', textTransform: 'uppercase', color: '#ccc' }}>
-                Employee
-              </th>
+              <th className="col-staff">Employee</th>
               {dates.map((date, i) => {
                 const d = new Date(date + 'T00:00:00');
                 const dayShifts = shifts.filter(s => s.shift_date === date);
                 const dayHrs = dayShifts.reduce((a, s) => a + calcHours(s.start_time, s.end_time), 0);
                 return (
-                  <th key={i} className="day-header">
-                    <div className="day-label">{DAYS[i]}</div>
+                  <th key={i} className="col-day">
+                    <div className="day-name">{DAYS[i]}</div>
                     <div className="day-num">{d.getDate()}</div>
                     {dayShifts.length > 0 && (
-                      <div className="day-meta">{dayHrs.toFixed(0)}h · {dayShifts.length}</div>
+                      <div className="day-stats">{dayHrs.toFixed(0)}h · {dayShifts.length}</div>
                     )}
                   </th>
                 );
@@ -341,10 +331,10 @@ function PrintContent() {
           <tbody>
             {scheduledEmps.map((emp) => (
               <tr key={emp.id}>
-                <td style={{ borderColor: '#bbb', background: 'inherit' }}>
-                  <div className="emp-cell">
-                    <div className="emp-avatar">{initials(emp.name)}</div>
-                    <div style={{ minWidth: 0 }}>
+                <td className="emp-td">
+                  <div className="emp-inner">
+                    <span className="emp-init">{initials(emp.name)}</span>
+                    <div>
                       <div className="emp-name">{emp.name}</div>
                       <div className="emp-role">{emp.role}</div>
                     </div>
@@ -352,20 +342,22 @@ function PrintContent() {
                 </td>
                 {dates.map((date, di) => {
                   const cellShifts = shiftMap.get(`${emp.id}-${date}`) ?? [];
+                  if (cellShifts.length === 0) {
+                    return <td key={di} className="empty-td">—</td>;
+                  }
                   return (
-                    <td key={di} className={cellShifts.length === 0 ? 'empty-cell' : 'day-cell'}>
-                      {cellShifts.length === 0 ? '—' : cellShifts.map((s, si) => {
+                    <td key={di} className="shift-td">
+                      {cellShifts.map((s, si) => {
                         const h = calcHours(s.start_time, s.end_time);
+                        const hrs = h % 1 === 0 ? `${h}h` : `${h.toFixed(1)}h`;
                         return (
-                          <span key={si} className="shift-pill">
-                            <span className="shift-time">
-                              {fmtTime(s.start_time)}–{fmtTime(s.end_time)}
-                            </span>
-                            <span className="shift-hours">
-                              {h % 1 === 0 ? `${h}h` : `${h.toFixed(1)}h`}
-                            </span>
-                            {s.note && <span className="shift-note">{s.note}</span>}
-                          </span>
+                          <div key={si} className="shift-entry">
+                            <div>
+                              <span className="shift-time">{fmtTime(s.start_time)}–{fmtTime(s.end_time)}</span>
+                              <span className="shift-hrs">{hrs}</span>
+                            </div>
+                            {s.note && <div className="shift-note">{s.note}</div>}
+                          </div>
                         );
                       })}
                     </td>
@@ -376,8 +368,7 @@ function PrintContent() {
           </tbody>
         </table>
 
-        {/* Footer */}
-        <div style={{ marginTop: '10px', fontSize: '9px', color: '#aaa', textAlign: 'right', fontFamily: 'monospace' }}>
+        <div className="doc-footer">
           Printed {new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
         </div>
       </div>
@@ -388,9 +379,7 @@ function PrintContent() {
 export default function PrintPage() {
   return (
     <Suspense fallback={
-      <div style={{ fontFamily: 'system-ui', padding: '48px', textAlign: 'center', color: '#666' }}>
-        Loading…
-      </div>
+      <div style={{ fontFamily: 'system-ui', padding: '48px', textAlign: 'center', color: '#666' }}>Loading…</div>
     }>
       <PrintContent />
     </Suspense>
