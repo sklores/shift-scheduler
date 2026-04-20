@@ -44,7 +44,7 @@ export default function ShiftBlock({
       onDragEnd={() => setIsDragging(false)}
       className={`group relative rounded-md text-white cursor-pointer transition-all hover:brightness-110 hover:shadow-sm ${
         isDragging ? 'opacity-40' : ''
-      } ${compact ? 'px-2 py-1.5 min-h-[34px]' : 'px-2.5 py-2 min-h-[42px]'} ${
+      } ${compact ? 'px-2.5 py-2 min-h-[36px]' : 'px-2.5 py-2.5 min-h-[44px]'} ${
         conflict ? 'ring-2 ring-[var(--color-accent)] ring-offset-1 ring-offset-white' : ''
       }`}
       style={{ backgroundColor: bg }}
@@ -53,15 +53,30 @@ export default function ShiftBlock({
     >
       <div className="flex items-start justify-between gap-1">
         <div className="min-w-0 flex-1">
-          <div className={`truncate font-medium ${compact ? 'text-[11px]' : 'text-[12px]'} flex items-center gap-1`}>
-            {conflict && <span aria-label="Conflict">&#9888;</span>}
-            <span className="truncate">{shift.note || (showEmployeeName && employee ? employee.name : employee?.name.split(' ')[0]) || 'Shift'}</span>
-          </div>
-          <div className={`font-mono text-white/70 ${compact ? 'text-[10px]' : 'text-[10.5px]'} mt-0.5 flex items-center gap-1.5`}>
-            <span>{formatTime(shift.startTime)} – {formatTime(shift.endTime)}</span>
-            <span className="text-white/50">·</span>
-            <span className="text-white/50">{hours}h</span>
-          </div>
+          {/* Compact (grid) mode: time is the hero — name is redundant since the row IS the employee */}
+          {compact ? (
+            <>
+              <div className="font-mono font-semibold text-[12.5px] leading-tight flex items-center gap-1">
+                {conflict && <span aria-label="Conflict">&#9888;</span>}
+                <span className="truncate">{formatTime(shift.startTime)} – {formatTime(shift.endTime)}</span>
+              </div>
+              {shift.note && (
+                <div className="text-[10.5px] text-white/60 mt-0.5 truncate">{shift.note}</div>
+              )}
+            </>
+          ) : (
+            <>
+              <div className="truncate font-medium text-[13px] flex items-center gap-1">
+                {conflict && <span aria-label="Conflict">&#9888;</span>}
+                <span className="truncate">{showEmployeeName && employee ? employee.name : (shift.note || employee?.name.split(' ')[0] || 'Shift')}</span>
+              </div>
+              <div className="font-mono text-white/70 text-[11px] mt-0.5 flex items-center gap-1.5">
+                <span>{formatTime(shift.startTime)} – {formatTime(shift.endTime)}</span>
+                <span className="text-white/50">·</span>
+                <span className="text-white/50">{hours}h</span>
+              </div>
+            </>
+          )}
         </div>
         <button
           className="text-white/40 hover:text-white text-base leading-none opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0 -mr-1 -mt-0.5 p-0.5"

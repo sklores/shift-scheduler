@@ -177,12 +177,12 @@ function DesktopGrid({ onAddShift, onEditShift, onDeleteShift, toastTips, tipsLo
         className="min-w-[900px] grid bg-[var(--color-surface)]"
         style={{
           gridTemplateColumns: '220px repeat(7, minmax(130px, 1fr))',
-          gridTemplateRows: '72px',
-          gridAutoRows: '96px',
+          gridTemplateRows: '76px',
+          gridAutoRows: '100px',
         }}
       >
         {/* Staff column header */}
-        <div className="sticky left-0 top-0 z-20 bg-[var(--color-surface)] border-r border-b border-[var(--color-border)] flex items-center px-4 font-mono text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--color-muted)]">
+        <div className="sticky left-0 top-0 z-20 bg-[var(--color-surface)] border-r border-b border-[var(--color-border)] flex items-center px-4 text-[11px] font-semibold uppercase tracking-[0.1em] text-[var(--color-muted)]">
           Staff
         </div>
 
@@ -194,9 +194,9 @@ function DesktopGrid({ onAddShift, onEditShift, onDeleteShift, toastTips, tipsLo
           const dayHours = dayShifts.reduce((sum, s) => sum + calcHours(s.startTime, s.endTime), 0);
           return (
             <div key={i} className="border-r border-b border-[var(--color-border)] last:border-r-0 bg-[var(--color-surface)] sticky top-0 z-10 px-3 py-2.5 text-center">
-              <div className="font-mono text-[10px] uppercase tracking-[0.12em] text-[var(--color-muted)]">{DAYS[i]}</div>
-              <div className={`text-[20px] font-semibold leading-tight mt-0.5 ${today ? 'text-[var(--color-accent)]' : 'text-[var(--color-text)]'}`}>{date.getDate()}</div>
-              <div className="font-mono text-[10px] text-[var(--color-muted)] mt-0.5 h-3.5">
+              <div className="text-[11px] font-medium uppercase tracking-[0.08em] text-[var(--color-muted)]">{DAYS[i]}</div>
+              <div className={`text-[22px] font-semibold leading-tight mt-0.5 ${today ? 'text-[var(--color-accent)]' : 'text-[var(--color-text)]'}`}>{date.getDate()}</div>
+              <div className="text-[11px] text-[var(--color-muted)] mt-0.5 h-4 font-mono">
                 {dayShifts.length > 0 ? `${dayHours.toFixed(0)}h · ${dayShifts.length}` : ''}
               </div>
             </div>
@@ -256,10 +256,10 @@ function DesktopGrid({ onAddShift, onEditShift, onDeleteShift, toastTips, tipsLo
                   {initials(emp.name)}
                 </div>
                 <div className="min-w-0 flex-1">
-                  <div className="text-[13px] font-medium truncate text-[var(--color-text)]">{emp.name}</div>
-                  <div className="text-[11px] text-[var(--color-muted)] capitalize">{emp.role}</div>
+                  <div className="text-[14px] font-semibold truncate text-[var(--color-text)]">{emp.name}</div>
+                  <div className="text-[11.5px] text-[var(--color-muted)] capitalize">{emp.role}</div>
                 </div>
-                <div className="text-right font-mono text-[11px] flex-shrink-0">
+                <div className="text-right font-mono text-[11.5px] flex-shrink-0">
                   <div className={`flex items-center gap-1 justify-end ${isOvertime(weeklyHrs) ? 'text-[var(--color-warn)] font-semibold' : 'text-[var(--color-muted)]'}`}
                     title={isOvertime(weeklyHrs) ? `${weeklyHrs.toFixed(0)}h — ${(weeklyHrs - OT_THRESHOLD_HOURS).toFixed(0)}h over 40` : undefined}>
                     {isOvertime(weeklyHrs) && <span aria-label="Overtime">&#9888;</span>}
@@ -333,14 +333,14 @@ function DesktopGrid({ onAddShift, onEditShift, onDeleteShift, toastTips, tipsLo
                       </div>
                     ) : (
                       <>
-                        <div className="flex flex-col gap-1 max-h-[60px] overflow-auto pr-0.5">
+                        <div className="flex flex-col gap-1 overflow-auto pr-0.5">
                           {cellShifts.map(shift => (
                             <ShiftBlock key={shift.id} shift={shift} employee={emp} onEdit={onEditShift} onDelete={onDeleteShift} compact conflict={conflictingShiftIds.has(shift.id)} />
                           ))}
                         </div>
                         <button
                           data-add-btn
-                          className="block w-full border border-dashed border-[var(--color-border-strong)] text-[var(--color-muted)] rounded-md text-[11px] text-center py-[3px] mt-1 hover:border-[var(--color-accent)] hover:text-[var(--color-accent)] hover:bg-[var(--color-accent-subtle)] transition-all"
+                          className="block w-full border border-dashed border-[var(--color-border-strong)] text-[var(--color-muted)] rounded-md text-[12px] text-center py-1 mt-1 hover:border-[var(--color-accent)] hover:text-[var(--color-accent)] hover:bg-[var(--color-accent-subtle)] transition-all"
                           onClick={(e) => { e.stopPropagation(); onAddShift(emp.id, cellDate); }}
                         >+</button>
                       </>
@@ -355,7 +355,7 @@ function DesktopGrid({ onAddShift, onEditShift, onDeleteShift, toastTips, tipsLo
         {/* Tips row — pinned at bottom, shows per-day totals from Toast */}
         <div className="sticky left-0 z-[9] bg-[var(--color-surface-2)] border-r border-b border-[var(--color-border)] px-4 flex items-center gap-3">
           <div>
-            <div className="text-[10px] font-mono uppercase tracking-[0.1em] text-[var(--color-muted)] flex items-center gap-1 mb-1">
+            <div className="text-[11px] uppercase tracking-[0.08em] text-[var(--color-muted)] flex items-center gap-1 mb-1">
               Tips
               <span className="inline-block w-1.5 h-1.5 rounded-full bg-[#FF4C00]" title="Live from Toast" />
             </div>
@@ -366,7 +366,7 @@ function DesktopGrid({ onAddShift, onEditShift, onDeleteShift, toastTips, tipsLo
                 formatCurrency(toastTips.total)
               ) : '—'}
             </div>
-            <div className="text-[10px] text-[var(--color-muted)] mt-0.5">Weekly total</div>
+            <div className="text-[11px] text-[var(--color-muted)] mt-0.5">Weekly total</div>
           </div>
         </div>
         {Array.from({ length: 7 }, (_, i) => {

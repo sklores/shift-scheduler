@@ -105,9 +105,9 @@ function Card({
 }) {
   return (
     <div className={`${big ? 'min-w-[200px] bg-[var(--color-accent-subtle)] border-[var(--color-accent)]/20' : 'min-w-[140px] bg-[var(--color-surface-2)] border-[var(--color-border)]'} border rounded-lg px-4 py-3 flex-shrink-0 flex flex-col justify-between`}>
-      <div className={`text-[10px] font-mono uppercase tracking-[0.1em] ${warn ? 'text-[var(--color-warn)]' : 'text-[var(--color-muted)]'}`}>{label}</div>
-      <div className={`font-mono font-semibold leading-tight mt-2 ${big ? 'text-[28px] text-[var(--color-accent)]' : 'text-[20px] text-[var(--color-text)]'}`}>{value}</div>
-      {sublabel && <div className="text-[10px] text-[var(--color-muted)] mt-1 whitespace-nowrap">{sublabel}</div>}
+      <div className={`text-[11px] font-medium ${warn ? 'text-[var(--color-warn)]' : 'text-[var(--color-muted)]'}`}>{label}</div>
+      <div className={`font-mono font-semibold leading-tight mt-1.5 ${big ? 'text-[28px] text-[var(--color-accent)]' : 'text-[20px] text-[var(--color-text)]'}`}>{value}</div>
+      {sublabel && <div className="text-[11px] text-[var(--color-muted)] mt-1 whitespace-nowrap">{sublabel}</div>}
     </div>
   );
 }
@@ -128,11 +128,11 @@ function EditableCard({
 
   return (
     <div className="min-w-[140px] bg-[var(--color-surface-2)] border border-dashed border-[var(--color-border-strong)] rounded-lg px-4 py-3 flex-shrink-0 flex flex-col justify-between hover:border-[var(--color-accent)] transition-colors">
-      <div className="text-[10px] font-mono uppercase tracking-[0.1em] text-[var(--color-muted)] flex items-center gap-1">
+      <div className="text-[11px] font-medium text-[var(--color-muted)] flex items-center gap-1">
         {label}
         <svg width="10" height="10" viewBox="0 0 10 10" fill="none" className="opacity-50"><path d="M7 1L9 3L4 8H2V6L7 1Z" stroke="currentColor" strokeWidth="1" strokeLinejoin="round"/></svg>
       </div>
-      <div className="font-mono font-semibold leading-tight mt-2 flex items-center gap-0.5">
+      <div className="font-mono font-semibold leading-tight mt-1.5 flex items-center gap-0.5">
         <span className="text-[20px] text-[var(--color-muted)]">$</span>
         <input
           type="number" inputMode="decimal" min={0} step={10} value={text}
@@ -143,7 +143,7 @@ function EditableCard({
           className="w-full text-[20px] font-mono font-semibold text-[var(--color-text)] bg-transparent border-none outline-none focus:text-[var(--color-accent)] placeholder:text-[var(--color-muted)]"
         />
       </div>
-      {sublabel && <div className="text-[10px] text-[var(--color-muted)] mt-1 whitespace-nowrap">{sublabel}</div>}
+      {sublabel && <div className="text-[11px] text-[var(--color-muted)] mt-1 whitespace-nowrap">{sublabel}</div>}
     </div>
   );
 }
@@ -165,7 +165,7 @@ function ToastTipsCard({
       onMouseLeave={() => setShowDays(false)}
     >
       <div className="flex items-center justify-between gap-1">
-        <div className="text-[10px] font-mono uppercase tracking-[0.1em] text-[var(--color-muted)] flex items-center gap-1">
+        <div className="text-[11px] font-medium text-[var(--color-muted)] flex items-center gap-1">
           Tips
           <span className="inline-block w-1.5 h-1.5 rounded-full bg-[#FF4C00]" title="Live from Toast" />
         </div>
@@ -189,7 +189,7 @@ function ToastTipsCard({
           formatCurrency(data?.total ?? 0)
         )}
       </div>
-      <div className="text-[10px] text-[var(--color-muted)] mt-1 whitespace-nowrap">
+      <div className="text-[11px] text-[var(--color-muted)] mt-1 whitespace-nowrap">
         {error ? (
           <span className="text-[var(--color-warn)]" title={error}>Toast unavailable</span>
         ) : fetchedTime ? (
@@ -201,18 +201,18 @@ function ToastTipsCard({
 
       {showDays && data && (
         <div className="absolute bottom-full left-0 mb-2 z-50 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-lg shadow-xl px-3 py-2.5 min-w-[160px]">
-          <div className="text-[9px] font-mono uppercase tracking-wider text-[var(--color-muted)] mb-1.5">Tips by day</div>
+          <div className="text-[11px] font-medium text-[var(--color-muted)] mb-2">Tips by day</div>
           {DAY_LABELS.map(day => (
             <div key={day} className="flex justify-between items-center gap-4 py-0.5">
-              <span className="text-[11px] font-mono text-[var(--color-muted)]">{day}</span>
-              <span className="text-[11px] font-mono font-medium text-[var(--color-text)]">
+              <span className="text-[12px] text-[var(--color-muted)]">{day}</span>
+              <span className="text-[12px] font-mono font-medium text-[var(--color-text)]">
                 {data.byDay[day] > 0 ? formatCurrency(data.byDay[day]) : '—'}
               </span>
             </div>
           ))}
           <div className="border-t border-[var(--color-border)] mt-1.5 pt-1.5 flex justify-between">
-            <span className="text-[11px] font-mono text-[var(--color-muted)]">Total</span>
-            <span className="text-[11px] font-mono font-semibold text-[var(--color-text)]">{formatCurrency(data.total)}</span>
+            <span className="text-[12px] text-[var(--color-muted)]">Total</span>
+            <span className="text-[12px] font-mono font-semibold text-[var(--color-text)]">{formatCurrency(data.total)}</span>
           </div>
         </div>
       )}

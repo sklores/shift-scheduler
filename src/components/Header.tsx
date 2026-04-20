@@ -30,7 +30,7 @@ export default function Header({ onOpenDrawer, onOpenPublish }: HeaderProps) {
           <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M9 3L5 7L9 11" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
         </button>
         {/* Compact on mobile, full on sm+ */}
-        <span className="text-center text-[12px] sm:text-[12.5px] font-medium tracking-wide truncate">
+        <span className="text-center text-[13.5px] sm:text-[14px] font-medium tracking-wide truncate">
           <span className="sm:hidden">{weekLabelCompact}</span>
           <span className="hidden sm:inline">{weekLabel}</span>
         </span>
