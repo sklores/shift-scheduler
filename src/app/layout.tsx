@@ -17,20 +17,20 @@ const plexMono = IBM_Plex_Mono({
 export const metadata: Metadata = {
   metadataBase: new URL("https://schedule.anddone.ai"),
   title: {
-    default: "Shift — Employee Scheduler",
-    template: "%s · Shift",
+    default: "&shift — Employee Scheduler",
+    template: "%s · &shift",
   },
   description: "Build a week's schedule in a minute. A fast, keyboard-friendly employee scheduler with SMS publishing.",
   openGraph: {
-    title: "Shift — Employee Scheduler",
+    title: "&shift — Employee Scheduler",
     description: "Build a week's schedule in a minute.",
-    siteName: "Shift",
+    siteName: "&shift",
     type: "website",
     url: "https://schedule.anddone.ai",
   },
   twitter: {
     card: "summary_large_image",
-    title: "Shift — Employee Scheduler",
+    title: "&shift — Employee Scheduler",
     description: "Build a week's schedule in a minute.",
   },
 };

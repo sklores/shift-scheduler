@@ -17,7 +17,7 @@ export default function Header({ onOpenDrawer, onOpenPublish }: HeaderProps) {
     <header className="bg-[var(--color-text)] text-white px-3 sm:px-6 flex items-center gap-2 justify-between h-14 sticky top-0 z-50 shadow-sm w-full min-w-0">
       {/* Logo */}
       <div className="font-mono text-[18px] sm:text-[19px] font-semibold tracking-[-0.02em] flex-shrink-0">
-        sh<span className="text-[var(--color-accent)]">i</span>ft
+        <span className="text-[var(--color-accent)]">&amp;</span>shift
       </div>
 
       {/* Week nav — takes remaining space but shrinks first */}
