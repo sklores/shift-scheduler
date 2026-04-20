@@ -1,20 +1,13 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useSchedulerContext } from '@/context/SchedulerContext';
 import { computeLaborBreakdown } from '@/lib/utils/laborBreakdown';
 import { formatCurrency, PAYROLL_TAX_RATE } from '@/lib/utils/cost';
+import { getSupabase } from '@/lib/supabase/client';
 import type { ToastTipsData } from './Scheduler';
 
-const SALARY_KEY = 'shift_weekly_salary';
 const DAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-
-function readNumber(key: string): number {
-  if (typeof window === 'undefined') return 0;
-  const raw = localStorage.getItem(key);
-  const n = raw ? parseFloat(raw) : 0;
-  return Number.isFinite(n) ? n : 0;
-}
 
 interface LaborBreakdownBarProps {
   toastTips: ToastTipsData | null;
@@ -27,17 +20,37 @@ export default function LaborBreakdownBar({ toastTips, tipsLoading, tipsError, o
   const { currentWeekShifts, employees, weekStats } = useSchedulerContext();
 
   const [salary, setSalary] = useState<number>(0);
-  const [hydrated, setHydrated] = useState(false);
 
+  // Load from Supabase on mount
   useEffect(() => {
-    setSalary(readNumber(SALARY_KEY));
-    setHydrated(true);
+    (async () => {
+      try {
+        const sb = getSupabase();
+        const { data } = await sb
+          .from('shift_settings')
+          .select('value')
+          .eq('key', 'weekly_salary')
+          .single();
+        if (data) {
+          const n = parseFloat(data.value);
+          if (Number.isFinite(n)) setSalary(n);
+        }
+      } catch { /* silently ignore — salary stays 0 */ }
+    })();
   }, []);
 
-  useEffect(() => {
-    if (!hydrated) return;
-    localStorage.setItem(SALARY_KEY, String(salary));
-  }, [salary, hydrated]);
+  // Persist to Supabase on change (debounced via upsert)
+  const persistSalary = useCallback(async (val: number) => {
+    try {
+      const sb = getSupabase();
+      await sb.from('shift_settings').upsert({ key: 'weekly_salary', value: String(val) });
+    } catch { /* silently ignore */ }
+  }, []);
+
+  const handleSalaryChange = (val: number) => {
+    setSalary(val);
+    persistSalary(val);
+  };
 
   const tips = toastTips?.total ?? 0;
 
@@ -59,7 +72,7 @@ export default function LaborBreakdownBar({ toastTips, tipsLoading, tipsError, o
         <EditableCard
           label="Salary"
           value={salary}
-          onChange={setSalary}
+          onChange={handleSalaryChange}
           sublabel="Weekly pool"
         />
         <Card
