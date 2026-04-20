@@ -39,12 +39,20 @@ export default function LaborBreakdownBar({ toastTips, tipsLoading, tipsError, o
     })();
   }, []);
 
-  // Persist to Supabase on change (debounced via upsert)
+  // Persist to Supabase on change
   const persistSalary = useCallback(async (val: number) => {
     try {
       const sb = getSupabase();
-      await sb.from('shift_settings').upsert({ key: 'weekly_salary', value: String(val) });
-    } catch { /* silently ignore */ }
+      const { error } = await sb
+        .from('shift_settings')
+        .upsert(
+          { key: 'weekly_salary', value: String(val), updated_at: new Date().toISOString() },
+          { onConflict: 'key' }
+        );
+      if (error) console.error('[salary] upsert failed:', error.message, error.details);
+    } catch (e) {
+      console.error('[salary] unexpected error:', e);
+    }
   }, []);
 
   const handleSalaryChange = (val: number) => {
