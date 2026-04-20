@@ -77,6 +77,7 @@ export default function Toolbar({ onAddShift, onClearWeek, onSaveTemplate, onApp
           </button>
         )}
 
+        {/* Secondary actions — same border style, slightly muted text */}
         <button
           onClick={onApplyTemplate}
           className="text-[13px] font-medium px-3.5 py-2 rounded-lg bg-transparent text-[var(--color-text-2)] border border-[var(--color-border-strong)] hover:bg-[var(--color-bg)] hover:text-[var(--color-text)] transition-all flex-shrink-0"
@@ -89,15 +90,20 @@ export default function Toolbar({ onAddShift, onClearWeek, onSaveTemplate, onApp
         >
           Save Template
         </button>
+
+        {/* Divider */}
+        <div className="w-px h-5 bg-[var(--color-border-strong)] flex-shrink-0 mx-0.5" />
+
+        {/* Tertiary actions — no border, just text */}
         <button
           onClick={onClearWeek}
-          className="text-[13px] font-medium px-3.5 py-2 rounded-lg bg-transparent text-[var(--color-muted)] border border-[var(--color-border-strong)] hover:bg-[var(--color-bg)] hover:text-[var(--color-accent)] transition-all flex-shrink-0"
+          className="text-[12.5px] font-medium px-2.5 py-2 rounded-lg bg-transparent text-[var(--color-muted)] hover:text-[var(--color-accent)] hover:bg-[var(--color-accent-subtle)] transition-all flex-shrink-0"
         >
-          Clear Week
+          Clear
         </button>
         <button
           onClick={handlePrint}
-          className="text-[13px] font-medium px-3.5 py-2 rounded-lg bg-transparent text-[var(--color-muted)] border border-[var(--color-border-strong)] hover:bg-[var(--color-bg)] hover:text-[var(--color-text)] transition-all flex-shrink-0 flex items-center gap-1.5"
+          className="text-[12.5px] font-medium px-2.5 py-2 rounded-lg bg-transparent text-[var(--color-muted)] hover:text-[var(--color-text)] hover:bg-[var(--color-surface-2)] transition-all flex-shrink-0 flex items-center gap-1.5"
           title="Open printable schedule in new tab"
         >
           <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M3 4V2H10V4" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/><rect x="1" y="4" width="11" height="6" rx="1.5" stroke="currentColor" strokeWidth="1.3"/><path d="M3 10V11H10V10" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/><circle cx="9.5" cy="7" r="0.75" fill="currentColor"/></svg>
@@ -107,7 +113,7 @@ export default function Toolbar({ onAddShift, onClearWeek, onSaveTemplate, onApp
         <button
           onClick={() => fileInputRef.current?.click()}
           disabled={uploading || employees.length === 0}
-          className="text-[13px] font-medium px-3.5 py-2 rounded-lg bg-transparent text-[var(--color-muted)] border border-[var(--color-border-strong)] hover:bg-[var(--color-bg)] hover:text-[var(--color-text)] transition-all flex-shrink-0 flex items-center gap-1.5 disabled:opacity-40 disabled:cursor-not-allowed"
+          className="text-[12.5px] font-medium px-2.5 py-2 rounded-lg bg-transparent text-[var(--color-muted)] hover:text-[var(--color-text)] hover:bg-[var(--color-surface-2)] transition-all flex-shrink-0 flex items-center gap-1.5 disabled:opacity-40 disabled:cursor-not-allowed"
           title={employees.length === 0 ? 'Add employees first' : 'Upload a photo of a handwritten schedule to create a template'}
         >
           {uploading ? (

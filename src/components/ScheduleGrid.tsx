@@ -196,8 +196,24 @@ function DesktopGrid({ onAddShift, onEditShift, onDeleteShift, toastTips, tipsLo
             <div key={i} className="border-r border-b border-[var(--color-border)] last:border-r-0 bg-[var(--color-surface)] sticky top-0 z-10 px-3 py-2.5 text-center">
               <div className="text-[11px] font-medium uppercase tracking-[0.08em] text-[var(--color-muted)]">{DAYS[i]}</div>
               <div className={`text-[22px] font-semibold leading-tight mt-0.5 ${today ? 'text-[var(--color-accent)]' : 'text-[var(--color-text)]'}`}>{date.getDate()}</div>
-              <div className="text-[11px] text-[var(--color-muted)] mt-0.5 h-4 font-mono">
-                {dayShifts.length > 0 ? `${dayHours.toFixed(0)}h · ${dayShifts.length}` : ''}
+              {/* Shift density dots + hours */}
+              <div className="flex items-center justify-center gap-1 mt-1.5 h-4">
+                {dayShifts.length > 0 ? (
+                  <>
+                    <div className="flex items-center gap-[3px]">
+                      {Array.from({ length: Math.min(dayShifts.length, 5) }).map((_, di) => (
+                        <span
+                          key={di}
+                          className={`inline-block w-[5px] h-[5px] rounded-full ${today ? 'bg-[var(--color-accent)]' : 'bg-[var(--color-border-strong)]'}`}
+                        />
+                      ))}
+                      {dayShifts.length > 5 && (
+                        <span className={`text-[9px] font-mono ml-0.5 ${today ? 'text-[var(--color-accent)]' : 'text-[var(--color-muted)]'}`}>+{dayShifts.length - 5}</span>
+                      )}
+                    </div>
+                    <span className={`font-mono text-[10px] ${today ? 'text-[var(--color-accent)]/70' : 'text-[var(--color-muted)]'}`}>{dayHours.toFixed(0)}h</span>
+                  </>
+                ) : null}
               </div>
             </div>
           );
@@ -287,7 +303,7 @@ function DesktopGrid({ onAddShift, onEditShift, onDeleteShift, toastTips, tipsLo
                   <div
                     key={cellKey}
                     ref={(el) => { if (el) cellRefs.current.set(refKey, el); else cellRefs.current.delete(refKey); }}
-                    className={`border-r border-b border-[var(--color-border)] last:border-r-0 p-1.5 transition-colors overflow-hidden relative ${
+                    className={`group/cell border-r border-b border-[var(--color-border)] last:border-r-0 p-1.5 transition-colors overflow-hidden relative flex flex-col justify-center ${
                       isAlt ? 'bg-[#fafaf7]' : 'bg-[var(--color-surface)]'
                     } ${isDragOver ? 'drag-over' : ''} ${isFocused ? 'kbd-focused' : ''}`}
                     onClick={(e) => {
@@ -314,12 +330,12 @@ function DesktopGrid({ onAddShift, onEditShift, onDeleteShift, toastTips, tipsLo
                     }}
                   >
                     {blocked && blockRecord ? (
-                      <div className="group relative flex flex-col gap-1">
+                      <div className="group/block relative flex flex-col gap-1">
                         <div className="w-full rounded-md bg-[#1F1B16] text-white text-[10.5px] font-semibold text-center py-1.5 px-2 flex items-center justify-between gap-1 cursor-pointer select-none" title="Click × to remove">
                           <span className="flex-1 text-center uppercase tracking-wide">Unavailable</span>
                           <button
                             onClick={(e) => { e.stopPropagation(); removeAvailabilityBlock(blockRecord.id); }}
-                            className="opacity-0 group-hover:opacity-100 transition-opacity text-white/60 hover:text-white text-base leading-none flex-shrink-0 -mr-0.5"
+                            className="opacity-0 group-hover/block:opacity-100 transition-opacity text-white/60 hover:text-white text-base leading-none flex-shrink-0 -mr-0.5"
                             aria-label="Remove unavailable"
                           >&times;</button>
                         </div>
@@ -338,9 +354,10 @@ function DesktopGrid({ onAddShift, onEditShift, onDeleteShift, toastTips, tipsLo
                             <ShiftBlock key={shift.id} shift={shift} employee={emp} onEdit={onEditShift} onDelete={onDeleteShift} compact conflict={conflictingShiftIds.has(shift.id)} />
                           ))}
                         </div>
+                        {/* + button: hidden until cell hover */}
                         <button
                           data-add-btn
-                          className="block w-full border border-dashed border-[var(--color-border-strong)] text-[var(--color-muted)] rounded-md text-[12px] text-center py-1 mt-1 hover:border-[var(--color-accent)] hover:text-[var(--color-accent)] hover:bg-[var(--color-accent-subtle)] transition-all"
+                          className="block w-full border border-dashed border-[var(--color-border-strong)] text-[var(--color-muted)] rounded-md text-[12px] text-center py-1 mt-1 opacity-0 group-hover/cell:opacity-100 hover:border-[var(--color-accent)] hover:text-[var(--color-accent)] hover:bg-[var(--color-accent-subtle)] transition-all"
                           onClick={(e) => { e.stopPropagation(); onAddShift(emp.id, cellDate); }}
                         >+</button>
                       </>
