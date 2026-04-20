@@ -4,7 +4,6 @@ import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useSchedulerContext } from '@/context/SchedulerContext';
 import { computeLaborBreakdown } from '@/lib/utils/laborBreakdown';
 import { formatCurrency, PAYROLL_TAX_RATE } from '@/lib/utils/cost';
-import { getSupabase } from '@/lib/supabase/client';
 import type { ToastTipsData } from './Scheduler';
 
 const DAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
@@ -21,17 +20,13 @@ export default function LaborBreakdownBar({ toastTips, tipsLoading, tipsError, o
 
   const [salary, setSalary] = useState<number>(0);
 
-  // Load from Supabase on mount
+  // Load via server route (bypasses RLS — service role server-side)
   useEffect(() => {
     (async () => {
       try {
-        const sb = getSupabase();
-        const { data } = await sb
-          .from('shift_settings')
-          .select('value')
-          .eq('key', 'weekly_salary')
-          .single();
-        if (data) {
+        const res = await fetch('/api/settings?key=weekly_salary');
+        const data = await res.json();
+        if (data?.value !== null && data?.value !== undefined) {
           const n = parseFloat(data.value);
           if (Number.isFinite(n)) setSalary(n);
         }
@@ -39,17 +34,18 @@ export default function LaborBreakdownBar({ toastTips, tipsLoading, tipsError, o
     })();
   }, []);
 
-  // Persist to Supabase on change
+  // Persist via server route
   const persistSalary = useCallback(async (val: number) => {
     try {
-      const sb = getSupabase();
-      const { error } = await sb
-        .from('shift_settings')
-        .upsert(
-          { key: 'weekly_salary', value: String(val), updated_at: new Date().toISOString() },
-          { onConflict: 'key' }
-        );
-      if (error) console.error('[salary] upsert failed:', error.message, error.details);
+      const res = await fetch('/api/settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ key: 'weekly_salary', value: String(val) }),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        console.error('[salary] save failed:', err);
+      }
     } catch (e) {
       console.error('[salary] unexpected error:', e);
     }
