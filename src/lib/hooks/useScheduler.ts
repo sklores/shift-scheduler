@@ -18,6 +18,39 @@ interface WeekClipboardItem {
 
 export type SaveStatus = 'idle' | 'saving' | 'saved' | 'error';
 
+// ── Draft mode ──────────────────────────────────────────────────────────────
+// Draft shifts are stored in localStorage with a fixed "phantom week"
+// (2000-01-03 Mon → 2000-01-09 Sun). When draft mode is active, currentWeekShifts
+// re-dates them onto the current visible week so every grid/stat/conflict
+// computation works without knowing about draft at all.
+const PHANTOM_DATES = [
+  '2000-01-03', // Mon
+  '2000-01-04', // Tue
+  '2000-01-05', // Wed
+  '2000-01-06', // Thu
+  '2000-01-07', // Fri
+  '2000-01-08', // Sat
+  '2000-01-09', // Sun
+] as const;
+const DRAFT_KEY = 'shift_draft_shifts';
+
+function loadDraftFromStorage(): Shift[] {
+  try { return JSON.parse(localStorage.getItem(DRAFT_KEY) ?? '[]'); } catch { return []; }
+}
+function saveDraftToStorage(s: Shift[]) {
+  localStorage.setItem(DRAFT_KEY, JSON.stringify(s));
+}
+function currentDateToPhantomDate(date: string, weekOffset: number): string {
+  for (let i = 0; i < 7; i++) {
+    if (getDateForCell(weekOffset, i) === date) return PHANTOM_DATES[i];
+  }
+  // Fallback via day-of-week
+  const d = new Date(date + 'T00:00:00');
+  const idx = d.getDay() === 0 ? 6 : d.getDay() - 1;
+  return PHANTOM_DATES[idx];
+}
+// ────────────────────────────────────────────────────────────────────────────
+
 export function useScheduler(adapter: DataAdapter) {
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [shifts, setShifts] = useState<Shift[]>([]);
@@ -26,6 +59,10 @@ export function useScheduler(adapter: DataAdapter) {
   const [weekOffset, setWeekOffset] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [weekClipboard, setWeekClipboard] = useState<WeekClipboardItem[] | null>(null);
+
+  // Draft mode
+  const [isDraftMode, setIsDraftMode] = useState(false);
+  const [draftShifts, setDraftShifts] = useState<Shift[]>([]);
 
   // Save status tracking — updates on every write, fades back to idle after success
   const [saveStatus, setSaveStatus] = useState<SaveStatus>('idle');
@@ -92,29 +129,57 @@ export function useScheduler(adapter: DataAdapter) {
 
   // --- Shift actions ---
   const addShift = useCallback(async (data: Omit<Shift, 'id'>) => {
+    if (isDraftMode) {
+      const phantomDate = currentDateToPhantomDate(data.date, weekOffset);
+      const shift: Shift = { ...data, id: crypto.randomUUID(), date: phantomDate };
+      setDraftShifts(prev => { const next = [...prev, shift]; saveDraftToStorage(next); return next; });
+      return shift;
+    }
     const shift = await track(() => adapter.addShift(data));
     setShifts(prev => [...prev, shift]);
     return shift;
-  }, [adapter, track]);
+  }, [adapter, track, isDraftMode, weekOffset]);
 
   const updateShift = useCallback(async (id: string, updates: Partial<Shift>) => {
+    if (isDraftMode) {
+      let updated!: Shift;
+      setDraftShifts(prev => {
+        const next = prev.map(s => s.id === id ? (updated = { ...s, ...updates }) : s);
+        saveDraftToStorage(next);
+        return next;
+      });
+      return updated;
+    }
     const shift = await track(() => adapter.updateShift(id, updates));
     setShifts(prev => prev.map(s => s.id === id ? shift : s));
     return shift;
-  }, [adapter, track]);
+  }, [adapter, track, isDraftMode]);
 
   const deleteShift = useCallback(async (id: string) => {
+    if (isDraftMode) {
+      setDraftShifts(prev => { const next = prev.filter(s => s.id !== id); saveDraftToStorage(next); return next; });
+      return;
+    }
     await track(() => adapter.removeShift(id));
     setShifts(prev => prev.filter(s => s.id !== id));
-  }, [adapter, track]);
+  }, [adapter, track, isDraftMode]);
 
   const moveShift = useCallback(async (id: string, newEmployeeId: string, newDate: string) => {
+    if (isDraftMode) {
+      const phantomDate = currentDateToPhantomDate(newDate, weekOffset);
+      setDraftShifts(prev => {
+        const next = prev.map(s => s.id === id ? { ...s, employeeId: newEmployeeId, date: phantomDate } : s);
+        saveDraftToStorage(next);
+        return next;
+      });
+      return;
+    }
     const shift = shifts.find(s => s.id === id);
     if (!shift) return;
     if (shift.employeeId === newEmployeeId && shift.date === newDate) return;
     const updated = await track(() => adapter.updateShift(id, { employeeId: newEmployeeId, date: newDate }));
     setShifts(prev => prev.map(s => s.id === id ? updated : s));
-  }, [adapter, shifts, track]);
+  }, [adapter, shifts, track, isDraftMode, weekOffset]);
 
   // Week range helpers
   const weekStart = useMemo(() => formatWeekStartISO(weekOffset), [weekOffset]);
@@ -124,17 +189,26 @@ export function useScheduler(adapter: DataAdapter) {
   }, [weekOffset]);
 
   // Only the displayed week's shifts — used by grid, stats, conflicts, etc.
-  const currentWeekShifts = useMemo(
-    () => shifts.filter(s => s.date >= weekStart && s.date <= weekEnd),
-    [shifts, weekStart, weekEnd]
-  );
+  // In draft mode, phantom-dated draft shifts are re-dated onto the current visible week.
+  const currentWeekShifts = useMemo(() => {
+    if (isDraftMode) {
+      return draftShifts.map(s => {
+        const idx = PHANTOM_DATES.indexOf(s.date as typeof PHANTOM_DATES[number]);
+        return { ...s, date: idx >= 0 ? getDateForCell(weekOffset, idx) : s.date };
+      });
+    }
+    return shifts.filter(s => s.date >= weekStart && s.date <= weekEnd);
+  }, [isDraftMode, draftShifts, shifts, weekStart, weekEnd, weekOffset]);
 
   const clearWeek = useCallback(async () => {
-    // Only delete the currently-displayed week
+    if (isDraftMode) {
+      setDraftShifts([]); saveDraftToStorage([]);
+      return;
+    }
     const toDelete = currentWeekShifts.map(s => s.id);
     for (const id of toDelete) await adapter.removeShift(id);
     setShifts(prev => prev.filter(s => !(s.date >= weekStart && s.date <= weekEnd)));
-  }, [adapter, currentWeekShifts, weekStart, weekEnd]);
+  }, [adapter, currentWeekShifts, weekStart, weekEnd, isDraftMode]);
 
   // Snapshot displayed week's shifts by their day-index-within-week,
   // so paste projects them onto whichever week the user is viewing when they paste.
@@ -296,10 +370,41 @@ export function useScheduler(adapter: DataAdapter) {
     return availabilityBlocks.filter(b => b.employeeId === empId);
   }, [availabilityBlocks]);
 
+  // --- Draft mode actions ---
+  const toggleDraftMode = useCallback(() => {
+    setIsDraftMode(prev => {
+      if (!prev) setDraftShifts(loadDraftFromStorage()); // load on enter
+      return !prev;
+    });
+  }, []);
+
+  /** Apply draft shifts to the currently displayed week in Supabase. Skips duplicates. */
+  const applyDraftToWeek = useCallback(async () => {
+    if (!isDraftMode || draftShifts.length === 0) return { added: 0, skipped: 0 };
+    const existingKeys = new Set(
+      currentWeekShifts.map(s => `${s.employeeId}-${s.date}-${s.startTime}-${s.endTime}`)
+    );
+    const validEmpIds = new Set(employees.map(e => e.id));
+    let added = 0; let skipped = 0;
+    for (const ds of draftShifts) {
+      const idx = PHANTOM_DATES.indexOf(ds.date as typeof PHANTOM_DATES[number]);
+      if (idx < 0) { skipped++; continue; }
+      const realDate = getDateForCell(weekOffset, idx);
+      const key = `${ds.employeeId}-${realDate}-${ds.startTime}-${ds.endTime}`;
+      if (!validEmpIds.has(ds.employeeId) || existingKeys.has(key)) { skipped++; continue; }
+      await adapter.addShift({ employeeId: ds.employeeId, date: realDate, startTime: ds.startTime, endTime: ds.endTime, note: ds.note });
+      added++;
+    }
+    const updated = await adapter.getShifts();
+    setShifts(updated);
+    return { added, skipped };
+  }, [isDraftMode, draftShifts, currentWeekShifts, employees, weekOffset, adapter]);
+
   // --- Week navigation ---
   const changeWeek = useCallback((dir: -1 | 1) => {
+    if (isDraftMode) return; // week nav locked in draft mode
     setWeekOffset(prev => prev + dir);
-  }, []);
+  }, [isDraftMode]);
 
   // --- Computed ---
   // Stats + conflicts are scoped to the CURRENTLY DISPLAYED week.
@@ -311,8 +416,10 @@ export function useScheduler(adapter: DataAdapter) {
 
   /** Fetch shifts for a cell by its exact ISO date. */
   const getShiftsForCell = useCallback((empId: string, date: string): Shift[] => {
+    // In draft mode, currentWeekShifts is already re-dated to real dates — use it directly.
+    if (isDraftMode) return currentWeekShifts.filter(s => s.employeeId === empId && s.date === date);
     return shifts.filter(s => s.employeeId === empId && s.date === date);
-  }, [shifts]);
+  }, [isDraftMode, shifts, currentWeekShifts]);
 
   const getEmployeeById = useCallback((id: string): Employee | undefined => {
     return employees.find(e => e.id === id);
@@ -334,6 +441,12 @@ export function useScheduler(adapter: DataAdapter) {
     isLoading,
     saveStatus,
     saveError,
+
+    // Draft mode
+    isDraftMode,
+    draftShifts,
+    toggleDraftMode,
+    applyDraftToWeek,
 
     // Employee actions
     addEmployee,

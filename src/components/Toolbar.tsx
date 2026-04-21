@@ -15,7 +15,7 @@ interface ToolbarProps {
 }
 
 export default function Toolbar({ onAddShift, onClearWeek, onSaveTemplate, onApplyTemplate, onCopyWeek, onPasteWeek, onToast }: ToolbarProps) {
-  const { weekStats, weekClipboard, currentWeekShifts, weekStart, employees, saveTemplateFromItems } = useSchedulerContext();
+  const { weekStats, weekClipboard, currentWeekShifts, weekStart, employees, saveTemplateFromItems, isDraftMode, toggleDraftMode, applyDraftToWeek, draftShifts } = useSchedulerContext();
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -45,9 +45,49 @@ export default function Toolbar({ onAddShift, onClearWeek, onSaveTemplate, onApp
   const hasClipboard = !!weekClipboard && weekClipboard.length > 0;
   const canCopy = currentWeekShifts.length > 0;
 
+  const handleApplyDraft = async () => {
+    const result = await applyDraftToWeek();
+    onToast(`${result.added} shifts applied · ${result.skipped} skipped`);
+    toggleDraftMode();
+  };
+
   return (
-    <div className="px-4 sm:px-6 py-3 border-b border-[var(--color-border)] bg-[var(--color-surface)] w-full min-w-0">
+    <div className={`px-4 sm:px-6 py-3 border-b border-[var(--color-border)] w-full min-w-0 transition-colors duration-200 ${isDraftMode ? 'bg-amber-50' : 'bg-[var(--color-surface)]'}`}>
       <div className="flex items-center gap-2 sm:gap-2.5 overflow-x-auto scrollbar-hide -mx-4 sm:-mx-6 px-4 sm:px-6">
+        {isDraftMode ? (
+          /* ── Draft mode actions ── */
+          <>
+            <button
+              onClick={onAddShift}
+              className="text-[13px] font-medium px-3.5 py-2 rounded-lg bg-amber-700 text-white border border-amber-700 hover:bg-amber-800 transition-all flex-shrink-0 flex items-center gap-1.5 shadow-sm"
+            >
+              <span className="text-base leading-none -mt-px">+</span> Add Shift
+            </button>
+            <button
+              onClick={handleApplyDraft}
+              disabled={draftShifts.length === 0}
+              className="text-[13px] font-medium px-3.5 py-2 rounded-lg bg-[var(--color-green)] text-white border border-[var(--color-green)] hover:bg-[var(--color-green-hover)] transition-all flex-shrink-0 flex items-center gap-1.5 shadow-sm disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M2 7L5 10L11 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+              Apply to This Week
+            </button>
+            <button
+              onClick={onSaveTemplate}
+              disabled={draftShifts.length === 0}
+              className="text-[13px] font-medium px-3.5 py-2 rounded-lg bg-transparent text-amber-800 border border-amber-300 hover:bg-amber-100 transition-all flex-shrink-0 disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              Save as Template
+            </button>
+            <button
+              onClick={onClearWeek}
+              className="text-[12.5px] font-medium px-2.5 py-2 rounded-lg bg-transparent text-amber-700 hover:text-amber-900 hover:bg-amber-100 transition-all flex-shrink-0"
+            >
+              Clear Draft
+            </button>
+          </>
+        ) : (
+          /* ── Normal mode actions ── */
+          <>
         <button
           onClick={onAddShift}
           className="text-[13px] font-medium px-3.5 py-2 rounded-lg bg-[var(--color-accent)] text-white border border-[var(--color-accent)] hover:bg-[var(--color-accent-hover)] transition-all flex-shrink-0 flex items-center gap-1.5 shadow-sm"
@@ -132,12 +172,24 @@ export default function Toolbar({ onAddShift, onClearWeek, onSaveTemplate, onApp
           onChange={e => { const f = e.target.files?.[0]; if (f) handleUpload(f); }}
         />
 
+        {/* Draft mode entry */}
+        <button
+          onClick={toggleDraftMode}
+          className="text-[12.5px] font-medium px-2.5 py-2 rounded-lg bg-transparent text-[var(--color-muted)] hover:text-amber-700 hover:bg-amber-50 transition-all flex-shrink-0 flex items-center gap-1.5"
+          title="Open a sandbox to plan without affecting real schedules"
+        >
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 10L4 2H8L10 10" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/><path d="M3 7H9" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/></svg>
+          <span className="hidden sm:inline">Draft</span>
+        </button>
+
         {/* Stats — desktop */}
         <div className="hidden md:flex ml-auto gap-2">
           <CostStat labor={weekStats.totalCost} />
           <Stat label="Hours" value={`${weekStats.totalHours.toFixed(0)}h`} />
           <Stat label="Shifts" value={String(weekStats.totalShifts)} />
         </div>
+        </> /* end normal mode */
+        )} {/* end isDraftMode ternary */}
       </div>
 
       {/* Stats — mobile (below buttons) */}
