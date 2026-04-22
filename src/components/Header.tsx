@@ -11,7 +11,7 @@ interface HeaderProps {
 
 export default function Header({ onOpenDrawer, onOpenPublish }: HeaderProps) {
   const { weekLabel, weekLabelCompact, changeWeek, isDraftMode, toggleDraftMode } = useSchedulerContext();
-  const { signOut } = useAuth();
+  const { signOut, isOwner } = useAuth();
 
   return (
     <header className={`${isDraftMode ? 'bg-amber-900' : 'bg-[var(--color-text)]'} text-white px-3 sm:px-6 flex items-center gap-2 justify-between h-14 sticky top-0 z-50 shadow-sm w-full min-w-0 transition-colors duration-200`}>
@@ -60,8 +60,8 @@ export default function Header({ onOpenDrawer, onOpenPublish }: HeaderProps) {
 
       {/* Actions */}
       <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
-        {!isDraftMode && <div className="hidden sm:block"><SaveIndicator /></div>}
-        {!isDraftMode && (
+        {!isDraftMode && isOwner && <div className="hidden sm:block"><SaveIndicator /></div>}
+        {!isDraftMode && isOwner && (
           <button
             onClick={onOpenDrawer}
             className="text-white/90 hover:text-white hover:bg-white/10 w-9 h-9 rounded-md flex items-center justify-center transition-all flex-shrink-0 sm:w-auto sm:h-auto sm:px-3.5 sm:py-1.5 sm:bg-white/[0.08] sm:border sm:border-white/10 sm:gap-2 sm:text-[12.5px] sm:font-medium"
@@ -71,7 +71,7 @@ export default function Header({ onOpenDrawer, onOpenPublish }: HeaderProps) {
             <span className="hidden sm:inline">Staff</span>
           </button>
         )}
-        {!isDraftMode && (
+        {!isDraftMode && isOwner && (
           <button
             onClick={onOpenPublish}
             className="bg-[var(--color-green)] border border-[var(--color-green)] text-white hover:bg-[var(--color-green-hover)] transition-all w-9 h-9 rounded-md flex items-center justify-center flex-shrink-0 sm:w-auto sm:h-auto sm:px-4 sm:py-1.5 sm:gap-2 sm:text-[12.5px] sm:font-medium"

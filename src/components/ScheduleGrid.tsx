@@ -9,6 +9,7 @@ import { calcHours } from '@/lib/utils/time';
 import { isOvertime, OT_THRESHOLD_HOURS } from '@/lib/utils/conflicts';
 import ShiftBlock from './ShiftBlock';
 import type { ToastTipsData } from './Scheduler';
+import { useAuth } from '@/context/AuthContext';
 
 const DAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 const EMP_ORDER_KEY = 'shift_employee_order';
@@ -53,6 +54,7 @@ interface ShiftClipboard { startTime: string; endTime: string; note: string; }
 
 function DesktopGrid({ onAddShift, onEditShift, onDeleteShift, toastTips, tipsLoading }: ScheduleGridProps) {
   const { employees, weekDates, weekOffset, currentWeekShifts, getShiftsForCell, moveShift, changeWeek, conflictingShiftIds, addShift, isDateBlocked, getBlocksForEmployee, removeAvailabilityBlock } = useSchedulerContext();
+  const { isOwner } = useAuth();
 
   // Shift drag state
   const [dragTarget, setDragTarget] = useState<string | null>(null);
@@ -288,7 +290,7 @@ function DesktopGrid({ onAddShift, onEditShift, onDeleteShift, toastTips, tipsLo
                     {isOvertime(weeklyHrs) && <span aria-label="Overtime">&#9888;</span>}
                     <span>{weeklyHrs.toFixed(0)}h</span>
                   </div>
-                  <div className="text-[var(--color-accent)] font-semibold">{formatCurrency(weeklyCost)}</div>
+                  {isOwner && <div className="text-[var(--color-accent)] font-semibold">{formatCurrency(weeklyCost)}</div>}
                 </div>
               </div>
 
@@ -388,37 +390,39 @@ function DesktopGrid({ onAddShift, onEditShift, onDeleteShift, toastTips, tipsLo
           );
         })}
 
-        {/* Tips row — pinned at bottom, shows per-day totals from Toast */}
-        <div className="sticky left-0 z-[9] bg-[var(--color-surface-2)] border-r border-b border-[var(--color-border)] px-4 flex items-center gap-3">
-          <div>
-            <div className="text-[11px] uppercase tracking-[0.08em] text-[var(--color-muted)] flex items-center gap-1 mb-1">
-              Tips
-              <span className="inline-block w-1.5 h-1.5 rounded-full bg-[#FF4C00]" title="Live from Toast" />
+        {/* Tips row — owner only */}
+        {isOwner && <>
+          <div className="sticky left-0 z-[9] bg-[var(--color-surface-2)] border-r border-b border-[var(--color-border)] px-4 flex items-center gap-3">
+            <div>
+              <div className="text-[11px] uppercase tracking-[0.08em] text-[var(--color-muted)] flex items-center gap-1 mb-1">
+                Tips
+                <span className="inline-block w-1.5 h-1.5 rounded-full bg-[#FF4C00]" title="Live from Toast" />
+              </div>
+              <div className="font-mono text-[15px] font-semibold text-[var(--color-text)]">
+                {tipsLoading ? (
+                  <span className="inline-block w-3.5 h-3.5 border-2 border-[var(--color-border-strong)] border-t-[var(--color-text)] rounded-full animate-spin align-middle" />
+                ) : toastTips ? (
+                  formatCurrency(toastTips.total)
+                ) : '—'}
+              </div>
+              <div className="text-[11px] text-[var(--color-muted)] mt-0.5">Weekly total</div>
             </div>
-            <div className="font-mono text-[15px] font-semibold text-[var(--color-text)]">
-              {tipsLoading ? (
-                <span className="inline-block w-3.5 h-3.5 border-2 border-[var(--color-border-strong)] border-t-[var(--color-text)] rounded-full animate-spin align-middle" />
-              ) : toastTips ? (
-                formatCurrency(toastTips.total)
-              ) : '—'}
-            </div>
-            <div className="text-[11px] text-[var(--color-muted)] mt-0.5">Weekly total</div>
           </div>
-        </div>
-        {Array.from({ length: 7 }, (_, i) => {
-          const dayTips = toastTips?.byDay[DAY_LABELS[i]] ?? null;
-          return (
-            <div key={i} className="border-r border-b border-[var(--color-border)] last:border-r-0 bg-[var(--color-surface-2)] flex items-center justify-center px-2">
-              {tipsLoading ? (
-                <span className="inline-block w-3 h-3 border-2 border-[var(--color-border-strong)] border-t-[var(--color-muted)] rounded-full animate-spin" />
-              ) : (
-                <span className={`font-mono text-[14px] font-medium ${dayTips && dayTips > 0 ? 'text-[var(--color-text)]' : 'text-[var(--color-border-strong)]'}`}>
-                  {dayTips && dayTips > 0 ? formatCurrency(dayTips) : '—'}
-                </span>
-              )}
-            </div>
-          );
-        })}
+          {Array.from({ length: 7 }, (_, i) => {
+            const dayTips = toastTips?.byDay[DAY_LABELS[i]] ?? null;
+            return (
+              <div key={i} className="border-r border-b border-[var(--color-border)] last:border-r-0 bg-[var(--color-surface-2)] flex items-center justify-center px-2">
+                {tipsLoading ? (
+                  <span className="inline-block w-3 h-3 border-2 border-[var(--color-border-strong)] border-t-[var(--color-muted)] rounded-full animate-spin" />
+                ) : (
+                  <span className={`font-mono text-[14px] font-medium ${dayTips && dayTips > 0 ? 'text-[var(--color-text)]' : 'text-[var(--color-border-strong)]'}`}>
+                    {dayTips && dayTips > 0 ? formatCurrency(dayTips) : '—'}
+                  </span>
+                )}
+              </div>
+            );
+          })}
+        </>}
       </div>
     </div>
   );

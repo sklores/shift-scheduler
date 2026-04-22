@@ -1,10 +1,11 @@
 'use client';
 
 import { useState } from 'react';
-import { useAuth } from '@/context/AuthContext';
+import { useAuth, type UserRole } from '@/context/AuthContext';
 
 export default function AuthGate() {
   const { signIn } = useAuth();
+  const [role, setRole] = useState<UserRole>('owner');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -14,7 +15,7 @@ export default function AuthGate() {
     if (loading) return;
     setError(null);
     setLoading(true);
-    const result = await signIn(password);
+    const result = await signIn(password, role);
     if ('error' in result) {
       setError(result.error);
       setPassword('');
@@ -28,19 +29,47 @@ export default function AuthGate() {
         onSubmit={handleSubmit}
         className="w-full max-w-xs bg-white rounded-xl shadow-lg border border-[var(--color-border)] p-6"
       >
-        <div className="flex justify-center mb-5">
+        {/* Logo */}
+        <div className="flex justify-center mb-6">
           <div className="font-mono text-[24px] font-semibold tracking-[-0.02em] text-[var(--color-text)]">
-            sh<span className="text-[var(--color-accent)]">i</span>ft
+            <span className="text-[var(--color-accent)]">&amp;</span>shift
           </div>
         </div>
 
-        <div className="text-center mb-5">
-          <h1 className="text-[15px] font-semibold text-[var(--color-text)]">Beta Access</h1>
-          <p className="text-[12.5px] text-[var(--color-muted)] mt-1">
-            Enter the team password to continue.
-          </p>
+        {/* Role selector */}
+        <div className="mb-5">
+          <p className="text-[11px] font-medium text-[var(--color-muted)] uppercase tracking-wider mb-2">I am a…</p>
+          <div className="grid grid-cols-2 gap-2">
+            <button
+              type="button"
+              onClick={() => setRole('owner')}
+              className={`py-3 px-4 rounded-lg border text-[13px] font-medium transition-all text-left ${
+                role === 'owner'
+                  ? 'bg-[var(--color-accent-subtle)] border-[var(--color-accent)] text-[var(--color-accent)]'
+                  : 'bg-white border-[var(--color-border-strong)] text-[var(--color-text-2)] hover:border-[var(--color-accent)]/50'
+              }`}
+            >
+              <div className="text-[18px] mb-1">👔</div>
+              <div>Owner</div>
+              <div className="text-[10.5px] text-[var(--color-muted)] font-normal mt-0.5">Full access</div>
+            </button>
+            <button
+              type="button"
+              onClick={() => setRole('employee')}
+              className={`py-3 px-4 rounded-lg border text-[13px] font-medium transition-all text-left ${
+                role === 'employee'
+                  ? 'bg-[var(--color-accent-subtle)] border-[var(--color-accent)] text-[var(--color-accent)]'
+                  : 'bg-white border-[var(--color-border-strong)] text-[var(--color-text-2)] hover:border-[var(--color-accent)]/50'
+              }`}
+            >
+              <div className="text-[18px] mb-1">👤</div>
+              <div>Employee</div>
+              <div className="text-[10.5px] text-[var(--color-muted)] font-normal mt-0.5">Schedule only</div>
+            </button>
+          </div>
         </div>
 
+        {/* Password */}
         <label className="block mb-3">
           <span className="sr-only">Password</span>
           <input
@@ -60,7 +89,7 @@ export default function AuthGate() {
           disabled={loading || !password}
           className="w-full text-[13px] font-semibold px-4 py-2.5 rounded-lg bg-[var(--color-accent)] text-white border border-[var(--color-accent)] hover:bg-[var(--color-accent-hover)] transition-all disabled:opacity-40 disabled:cursor-not-allowed shadow-sm"
         >
-          {loading ? 'Signing in…' : 'Enter'}
+          {loading ? 'Signing in…' : `Enter as ${role === 'owner' ? 'Owner' : 'Employee'}`}
         </button>
 
         {error && (

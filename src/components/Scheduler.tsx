@@ -17,6 +17,7 @@ import ConfirmDialog from './ConfirmDialog';
 import CheatSheet from './CheatSheet';
 import LaborBreakdownBar from './LaborBreakdownBar';
 import MigrationBanner from './MigrationBanner';
+import { useAuth } from '@/context/AuthContext';
 
 export interface ToastTipsData {
   total: number;
@@ -26,6 +27,7 @@ export interface ToastTipsData {
 
 export default function Scheduler() {
   const { isLoading, clearWeek, currentWeekShifts, deleteShift, copyWeek, pasteWeek, weekStart } = useSchedulerContext();
+  const { isOwner } = useAuth();
   const toast = useToast();
   const confirm = useConfirm();
 
@@ -207,12 +209,14 @@ export default function Scheduler() {
           tipsLoading={tipsLoading}
         />
       </div>
-      <LaborBreakdownBar
-        toastTips={toastTips}
-        tipsLoading={tipsLoading}
-        tipsError={tipsError}
-        onRefreshTips={fetchTips}
-      />
+      {isOwner && (
+        <LaborBreakdownBar
+          toastTips={toastTips}
+          tipsLoading={tipsLoading}
+          tipsError={tipsError}
+          onRefreshTips={fetchTips}
+        />
+      )}
 
       <StaffDrawer
         isOpen={isDrawerOpen}

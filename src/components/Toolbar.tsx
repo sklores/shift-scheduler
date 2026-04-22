@@ -2,6 +2,7 @@
 
 import { useRef, useState } from 'react';
 import { useSchedulerContext } from '@/context/SchedulerContext';
+import { useAuth } from '@/context/AuthContext';
 import { formatCurrency } from '@/lib/utils/cost';
 
 interface ToolbarProps {
@@ -16,6 +17,7 @@ interface ToolbarProps {
 
 export default function Toolbar({ onAddShift, onClearWeek, onSaveTemplate, onApplyTemplate, onCopyWeek, onPasteWeek, onToast }: ToolbarProps) {
   const { weekStats, weekClipboard, currentWeekShifts, weekStart, employees, saveTemplateFromItems, isDraftMode, toggleDraftMode, applyDraftToWeek, draftShifts } = useSchedulerContext();
+  const { isOwner } = useAuth();
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -184,7 +186,7 @@ export default function Toolbar({ onAddShift, onClearWeek, onSaveTemplate, onApp
 
         {/* Stats — desktop */}
         <div className="hidden md:flex ml-auto gap-2">
-          <CostStat labor={weekStats.totalCost} />
+          {isOwner && <CostStat labor={weekStats.totalCost} />}
           <Stat label="Hours" value={`${weekStats.totalHours.toFixed(0)}h`} />
           <Stat label="Shifts" value={String(weekStats.totalShifts)} />
         </div>
@@ -194,7 +196,7 @@ export default function Toolbar({ onAddShift, onClearWeek, onSaveTemplate, onApp
 
       {/* Stats — mobile (below buttons) */}
       <div className="flex md:hidden gap-2 mt-3">
-        <CostStat labor={weekStats.totalCost} fill />
+        {isOwner && <CostStat labor={weekStats.totalCost} fill />}
         <Stat label="Hours" value={`${weekStats.totalHours.toFixed(0)}h`} fill />
         <Stat label="Shifts" value={String(weekStats.totalShifts)} fill />
       </div>
