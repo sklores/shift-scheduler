@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useAuth, type UserRole } from '@/context/AuthContext';
 
 export default function AuthGate() {
@@ -9,6 +9,7 @@ export default function AuthGate() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const passwordRef = useRef<HTMLInputElement>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -42,7 +43,7 @@ export default function AuthGate() {
             <button
               key={r}
               type="button"
-              onClick={() => setRole(r)}
+              onClick={() => { setRole(r); setTimeout(() => passwordRef.current?.focus(), 0); }}
               className={`py-2.5 rounded-lg border text-[13px] font-medium capitalize transition-all ${
                 role === r
                   ? 'bg-[var(--color-accent-subtle)] border-[var(--color-accent)] text-[var(--color-accent)]'
@@ -58,6 +59,7 @@ export default function AuthGate() {
         <label className="block mb-3">
           <span className="sr-only">Password</span>
           <input
+            ref={passwordRef}
             type="password"
             inputMode="numeric"
             autoFocus
