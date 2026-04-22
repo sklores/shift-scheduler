@@ -117,7 +117,11 @@ function DesktopGrid({ onAddShift, onEditShift, onDeleteShift, toastTips, tipsLo
         case 'Enter': {
           e.preventDefault();
           const emp = sortedEmployees[focusedCell.row];
-          if (emp) onAddShift(emp.id, getDateForCell(weekOffset, focusedCell.col));
+          if (emp) {
+            const date = getDateForCell(weekOffset, focusedCell.col);
+            const occupied = currentWeekShifts.some(s => s.employeeId === emp.id && s.date === date);
+            if (!occupied) onAddShift(emp.id, date);
+          }
           break;
         }
         case 'e': case 'E': {
@@ -151,8 +155,11 @@ function DesktopGrid({ onAddShift, onEditShift, onDeleteShift, toastTips, tipsLo
           if (!clipboard) return;
           const emp = sortedEmployees[focusedCell.row];
           if (!emp) return;
+          const date = getDateForCell(weekOffset, focusedCell.col);
+          const occupied = currentWeekShifts.some(s => s.employeeId === emp.id && s.date === date);
+          if (occupied) return;
           e.preventDefault();
-          addShift({ employeeId: emp.id, date: getDateForCell(weekOffset, focusedCell.col), startTime: clipboard.startTime, endTime: clipboard.endTime, note: clipboard.note });
+          addShift({ employeeId: emp.id, date, startTime: clipboard.startTime, endTime: clipboard.endTime, note: clipboard.note });
           break;
         }
         case '[': e.preventDefault(); changeWeek(-1); break;
@@ -312,10 +319,16 @@ function DesktopGrid({ onAddShift, onEditShift, onDeleteShift, toastTips, tipsLo
                       setFocusedCell({ row: rowIdx, col: dayIdx });
                       if (cellShifts.length === 0) onAddShift(emp.id, cellDate);
                     }}
-                    onDoubleClick={() => onAddShift(emp.id, cellDate)}
+                    onDoubleClick={() => { if (cellShifts.length === 0) onAddShift(emp.id, cellDate); }}
                     onDragOver={(e) => {
                       // Ignore employee row drags
                       if (e.dataTransfer.types.includes('text/employee-id')) return;
+                      // Block drops onto occupied cells (unless it's the same shift being moved)
+                      const draggingId = e.dataTransfer.types.includes('text/shift-id') ? 'pending' : null;
+                      if (cellShifts.length > 0 && draggingId) {
+                        e.dataTransfer.dropEffect = 'none';
+                        return;
+                      }
                       e.preventDefault();
                       e.dataTransfer.dropEffect = 'move';
                       if (dragTarget !== cellKey) setDragTarget(cellKey);
@@ -326,7 +339,11 @@ function DesktopGrid({ onAddShift, onEditShift, onDeleteShift, toastTips, tipsLo
                       e.preventDefault();
                       setDragTarget(null);
                       const shiftId = e.dataTransfer.getData('text/shift-id');
-                      if (shiftId) await moveShift(shiftId, emp.id, cellDate);
+                      if (!shiftId) return;
+                      // Block drop if cell is occupied by a *different* shift
+                      const alreadyOccupied = cellShifts.some(s => s.id !== shiftId);
+                      if (alreadyOccupied) return;
+                      await moveShift(shiftId, emp.id, cellDate);
                     }}
                   >
                     {blocked && blockRecord ? (
@@ -354,12 +371,14 @@ function DesktopGrid({ onAddShift, onEditShift, onDeleteShift, toastTips, tipsLo
                             <ShiftBlock key={shift.id} shift={shift} employee={emp} onEdit={onEditShift} onDelete={onDeleteShift} compact conflict={conflictingShiftIds.has(shift.id)} />
                           ))}
                         </div>
-                        {/* + button: hidden until cell hover */}
-                        <button
-                          data-add-btn
-                          className="block w-full border border-dashed border-[var(--color-border-strong)] text-[var(--color-muted)] rounded-md text-[12px] text-center py-1 mt-1 opacity-0 group-hover/cell:opacity-100 hover:border-[var(--color-accent)] hover:text-[var(--color-accent)] hover:bg-[var(--color-accent-subtle)] transition-all"
-                          onClick={(e) => { e.stopPropagation(); onAddShift(emp.id, cellDate); }}
-                        >+</button>
+                        {/* + button: hidden until hover, gone entirely when occupied */}
+                        {cellShifts.length === 0 && (
+                          <button
+                            data-add-btn
+                            className="block w-full border border-dashed border-[var(--color-border-strong)] text-[var(--color-muted)] rounded-md text-[12px] text-center py-1 mt-1 opacity-0 group-hover/cell:opacity-100 hover:border-[var(--color-accent)] hover:text-[var(--color-accent)] hover:bg-[var(--color-accent-subtle)] transition-all"
+                            onClick={(e) => { e.stopPropagation(); onAddShift(emp.id, cellDate); }}
+                          >+</button>
+                        )}
                       </>
                     )}
                   </div>
