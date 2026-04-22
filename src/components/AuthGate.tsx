@@ -37,36 +37,21 @@ export default function AuthGate() {
         </div>
 
         {/* Role selector */}
-        <div className="mb-5">
-          <p className="text-[11px] font-medium text-[var(--color-muted)] uppercase tracking-wider mb-2">I am a…</p>
-          <div className="grid grid-cols-2 gap-2">
+        <div className="grid grid-cols-2 gap-2 mb-5">
+          {(['owner', 'employee'] as const).map(r => (
             <button
+              key={r}
               type="button"
-              onClick={() => setRole('owner')}
-              className={`py-3 px-4 rounded-lg border text-[13px] font-medium transition-all text-left ${
-                role === 'owner'
+              onClick={() => setRole(r)}
+              className={`py-2.5 rounded-lg border text-[13px] font-medium capitalize transition-all ${
+                role === r
                   ? 'bg-[var(--color-accent-subtle)] border-[var(--color-accent)] text-[var(--color-accent)]'
                   : 'bg-white border-[var(--color-border-strong)] text-[var(--color-text-2)] hover:border-[var(--color-accent)]/50'
               }`}
             >
-              <div className="text-[18px] mb-1">👔</div>
-              <div>Owner</div>
-              <div className="text-[10.5px] text-[var(--color-muted)] font-normal mt-0.5">Full access</div>
+              {r}
             </button>
-            <button
-              type="button"
-              onClick={() => setRole('employee')}
-              className={`py-3 px-4 rounded-lg border text-[13px] font-medium transition-all text-left ${
-                role === 'employee'
-                  ? 'bg-[var(--color-accent-subtle)] border-[var(--color-accent)] text-[var(--color-accent)]'
-                  : 'bg-white border-[var(--color-border-strong)] text-[var(--color-text-2)] hover:border-[var(--color-accent)]/50'
-              }`}
-            >
-              <div className="text-[18px] mb-1">👤</div>
-              <div>Employee</div>
-              <div className="text-[10.5px] text-[var(--color-muted)] font-normal mt-0.5">Schedule only</div>
-            </button>
-          </div>
+          ))}
         </div>
 
         {/* Password */}
