@@ -218,11 +218,14 @@ function PrintContent() {
         .shift-entry + .shift-entry { border-top: 0.5px solid #e0e0e0; margin-top: 3px; padding-top: 3px; }
         .shift-time {
           font-family: 'Courier New', Courier, monospace;
-          font-size: 15px;
+          font-size: 13px;
           font-weight: 700;
           color: #000;
           white-space: nowrap;
+          line-height: 1.35;
         }
+        .shift-start { display: block; }
+        .shift-end   { display: block; color: #444; font-weight: 600; }
         .shift-note {
           font-size: 9px;
           color: #555;
@@ -319,7 +322,10 @@ function PrintContent() {
                       {cellShifts.map((s, si) => {
                         return (
                           <div key={si} className="shift-entry">
-                            <div className="shift-time">{fmtTime(s.start_time)}–{fmtTime(s.end_time)}</div>
+                            <div className="shift-time">
+                              <span className="shift-start">{fmtTime(s.start_time)}</span>
+                              <span className="shift-end">{fmtTime(s.end_time)}</span>
+                            </div>
                             {s.note && <div className="shift-note">{s.note}</div>}
                           </div>
                         );
