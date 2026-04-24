@@ -172,7 +172,7 @@ function PrintContent() {
         /* ── Column header ── */
         .col-staff {
           text-align: left;
-          padding: 5px 8px;
+          padding: 8px 10px;
           font-size: 8.5px;
           font-weight: 700;
           letter-spacing: 0.1em;
@@ -180,7 +180,7 @@ function PrintContent() {
           color: #555;
           border-right: 1px solid #555;
         }
-        .col-day { text-align: center; padding: 4px 3px; }
+        .col-day { text-align: center; padding: 8px 4px; }
         .day-name {
           font-size: 7.5px;
           font-weight: 700;
@@ -195,12 +195,6 @@ function PrintContent() {
           line-height: 1.1;
           margin-top: 1px;
         }
-        .day-stats {
-          font-family: monospace;
-          font-size: 7.5px;
-          color: #888;
-          margin-top: 1px;
-        }
 
         /* ── Employee cell ── */
         .emp-td { border-right: 1px solid #555; }
@@ -208,14 +202,14 @@ function PrintContent() {
           display: flex;
           align-items: center;
           gap: 6px;
-          padding: 5px 7px;
+          padding: 16px 10px;
         }
         .emp-name { font-size: 12px; font-weight: 700; color: #000; }
 
         /* ── Shift cell ── */
-        .shift-td { padding: 4px 4px; vertical-align: middle; text-align: center; overflow: hidden; }
+        .shift-td { padding: 16px 5px; vertical-align: middle; text-align: center; overflow: hidden; }
         .shift-entry { padding: 2px 0; }
-        .shift-entry + .shift-entry { border-top: 0.5px solid #e0e0e0; margin-top: 3px; padding-top: 3px; }
+        .shift-entry + .shift-entry { border-top: 0.5px solid #e0e0e0; margin-top: 4px; padding-top: 4px; }
         .shift-time {
           font-family: 'Courier New', Courier, monospace;
           font-size: 11px;
@@ -228,7 +222,7 @@ function PrintContent() {
           font-size: 9px;
           color: #555;
           font-style: italic;
-          margin-top: 1px;
+          margin-top: 2px;
           white-space: nowrap;
           overflow: hidden;
           text-overflow: ellipsis;
@@ -238,7 +232,7 @@ function PrintContent() {
         .empty-td {
           text-align: center;
           vertical-align: middle;
-          padding: 6px;
+          padding: 16px 5px;
           font-size: 11px;
           color: #ddd;
         }
@@ -258,6 +252,7 @@ function PrintContent() {
           .toolbar { display: none !important; }
           body { font-size: 10px; }
           * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+          tr { page-break-inside: avoid; }
         }
       `}</style>
 
