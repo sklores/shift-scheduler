@@ -212,7 +212,7 @@ function PrintContent() {
         .shift-entry + .shift-entry { border-top: 0.5px solid #e0e0e0; margin-top: 4px; padding-top: 4px; }
         .shift-time {
           font-family: 'Courier New', Courier, monospace;
-          font-size: 11px;
+          font-size: 13px;
           font-weight: 700;
           color: #000;
           white-space: nowrap;
