@@ -406,6 +406,11 @@ export function useScheduler(adapter: DataAdapter) {
     setWeekOffset(prev => prev + dir);
   }, [isDraftMode]);
 
+  const jumpToWeek = useCallback((offset: number) => {
+    if (isDraftMode) return;
+    setWeekOffset(offset);
+  }, [isDraftMode]);
+
   // --- Computed ---
   // Stats + conflicts are scoped to the CURRENTLY DISPLAYED week.
   const weekStats: WeekStats = useMemo(() => calculateWeekStats(currentWeekShifts, employees), [currentWeekShifts, employees]);
@@ -482,6 +487,7 @@ export function useScheduler(adapter: DataAdapter) {
 
     // Week
     changeWeek,
+    jumpToWeek,
 
     // Computed
     weekStats,

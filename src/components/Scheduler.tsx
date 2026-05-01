@@ -4,9 +4,10 @@ import { useState, useCallback, useEffect } from 'react';
 import { useSchedulerContext } from '@/context/SchedulerContext';
 import { useToast } from '@/lib/hooks/useToast';
 import { useConfirm } from '@/lib/hooks/useConfirm';
-import Header from './Header';
+import Header, { type ViewMode } from './Header';
 import Toolbar from './Toolbar';
 import ScheduleGrid from './ScheduleGrid';
+import MonthView from './MonthView';
 import StaffDrawer from './StaffDrawer';
 import ShiftModal from './ShiftModal';
 import PublishModal from './PublishModal';
@@ -26,11 +27,12 @@ export interface ToastTipsData {
 }
 
 export default function Scheduler() {
-  const { isLoading, clearWeek, currentWeekShifts, deleteShift, copyWeek, pasteWeek, weekStart } = useSchedulerContext();
+  const { isLoading, clearWeek, currentWeekShifts, deleteShift, copyWeek, pasteWeek, weekStart, jumpToWeek } = useSchedulerContext();
   const { isOwner } = useAuth();
   const toast = useToast();
   const confirm = useConfirm();
 
+  const [viewMode, setViewMode] = useState<ViewMode>('week');
   const [isDrawerOpen, setDrawerOpen] = useState(false);
 
   const [isShiftModalOpen, setShiftModalOpen] = useState(false);
@@ -189,27 +191,37 @@ export default function Scheduler() {
       <Header
         onOpenDrawer={() => setDrawerOpen(true)}
         onOpenPublish={handlePublish}
+        viewMode={viewMode}
+        onSetViewMode={setViewMode}
       />
       <MigrationBanner />
-      <Toolbar
-        onAddShift={() => handleAddShift()}
-        onClearWeek={handleClearWeek}
-        onSaveTemplate={() => setSaveTemplateOpen(true)}
-        onApplyTemplate={() => setApplyTemplateOpen(true)}
-        onCopyWeek={handleCopyWeek}
-        onPasteWeek={handlePasteWeek}
-        onToast={toast.show}
-      />
-      <div className="flex-1 flex overflow-hidden">
-        <ScheduleGrid
-          onAddShift={handleAddShift}
-          onEditShift={handleEditShift}
-          onDeleteShift={handleDeleteShift}
-          toastTips={toastTips}
-          tipsLoading={tipsLoading}
+      {viewMode === 'week' ? (
+        <>
+          <Toolbar
+            onAddShift={() => handleAddShift()}
+            onClearWeek={handleClearWeek}
+            onSaveTemplate={() => setSaveTemplateOpen(true)}
+            onApplyTemplate={() => setApplyTemplateOpen(true)}
+            onCopyWeek={handleCopyWeek}
+            onPasteWeek={handlePasteWeek}
+            onToast={toast.show}
+          />
+          <div className="flex-1 flex overflow-hidden">
+            <ScheduleGrid
+              onAddShift={handleAddShift}
+              onEditShift={handleEditShift}
+              onDeleteShift={handleDeleteShift}
+              toastTips={toastTips}
+              tipsLoading={tipsLoading}
+            />
+          </div>
+        </>
+      ) : (
+        <MonthView
+          onJumpToWeek={(offset) => { jumpToWeek(offset); setViewMode('week'); }}
         />
-      </div>
-      {isOwner && (
+      )}
+      {isOwner && viewMode === 'week' && (
         <LaborBreakdownBar
           toastTips={toastTips}
           tipsLoading={tipsLoading}

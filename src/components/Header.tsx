@@ -4,12 +4,16 @@ import { useSchedulerContext } from '@/context/SchedulerContext';
 import { useAuth } from '@/context/AuthContext';
 import SaveIndicator from './SaveIndicator';
 
+export type ViewMode = 'week' | 'month';
+
 interface HeaderProps {
   onOpenDrawer: () => void;
   onOpenPublish: () => void;
+  viewMode: ViewMode;
+  onSetViewMode: (v: ViewMode) => void;
 }
 
-export default function Header({ onOpenDrawer, onOpenPublish }: HeaderProps) {
+export default function Header({ onOpenDrawer, onOpenPublish, viewMode, onSetViewMode }: HeaderProps) {
   const { weekLabel, weekLabelCompact, changeWeek, isDraftMode, toggleDraftMode } = useSchedulerContext();
   const { signOut, isOwner } = useAuth();
 
@@ -28,11 +32,15 @@ export default function Header({ onOpenDrawer, onOpenPublish }: HeaderProps) {
         )}
       </div>
 
-      {/* Week nav — locked in draft mode */}
+      {/* Center: week nav or month label */}
       <div className="flex items-center gap-1 sm:gap-2 font-mono text-white/80 flex-1 min-w-0 justify-center">
         {isDraftMode ? (
           <span className="text-center text-[13.5px] sm:text-[14px] font-medium tracking-wide text-amber-200/70 select-none">
             Draft Week
+          </span>
+        ) : viewMode === 'month' ? (
+          <span className="text-center text-[13.5px] sm:text-[14px] font-medium tracking-wide text-white/60 select-none">
+            Month Overview
           </span>
         ) : (
           <>
@@ -61,6 +69,25 @@ export default function Header({ onOpenDrawer, onOpenPublish }: HeaderProps) {
       {/* Actions */}
       <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
         {!isDraftMode && isOwner && <div className="hidden sm:block"><SaveIndicator /></div>}
+
+        {/* View toggle: Week / Month — hidden in draft mode */}
+        {!isDraftMode && (
+          <div className="flex items-center rounded-md overflow-hidden border border-white/20 text-[12px] font-medium flex-shrink-0">
+            <button
+              onClick={() => onSetViewMode('week')}
+              className={`px-2.5 py-1.5 transition-colors ${viewMode === 'week' ? 'bg-white/20 text-white' : 'text-white/50 hover:text-white/80 hover:bg-white/10'}`}
+            >
+              Week
+            </button>
+            <button
+              onClick={() => onSetViewMode('month')}
+              className={`px-2.5 py-1.5 transition-colors ${viewMode === 'month' ? 'bg-white/20 text-white' : 'text-white/50 hover:text-white/80 hover:bg-white/10'}`}
+            >
+              Month
+            </button>
+          </div>
+        )}
+
         {!isDraftMode && isOwner && (
           <button
             onClick={onOpenDrawer}
