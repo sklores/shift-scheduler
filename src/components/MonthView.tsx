@@ -225,10 +225,9 @@ export default function MonthView({ onJumpToWeek }: MonthViewProps) {
 
       <style>{`
         @media print {
-          body > * { display: none !important; }
-          .month-view-root { display: flex !important; position: fixed; inset: 0; }
-          .month-nav, .month-legend { display: none !important; }
-          @page { size: landscape; margin: 8mm; }
+          @page { size: landscape; margin: 10mm; }
+          * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+          header, .month-nav, .month-legend { display: none !important; }
         }
       `}</style>
     </div>
