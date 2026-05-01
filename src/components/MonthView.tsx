@@ -10,7 +10,6 @@ interface MonthViewProps {
   onJumpToWeek: (offset: number) => void;
 }
 
-/** Return the week offset (relative to today's week) for any calendar date. */
 function weekOffsetForDate(date: Date): number {
   const jsDay = date.getDay();
   const diff = jsDay === 0 ? -6 : 1 - jsDay;
@@ -23,6 +22,9 @@ function weekOffsetForDate(date: Date): number {
 }
 
 const DAY_LETTERS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
+
+const EMP_COL = 140; // px — employee name column width
+const DAY_COL = 32;  // px — each day column width
 
 export default function MonthView({ onJumpToWeek }: MonthViewProps) {
   const { employees, shifts } = useSchedulerContext();
@@ -44,12 +46,10 @@ export default function MonthView({ onJumpToWeek }: MonthViewProps) {
       jsDay,
       isToday: isToday(d),
       isWeekend: jsDay === 0 || jsDay === 6,
-      // Show a left border to mark week start (Monday)
       isWeekStart: jsDay === 1 && i > 0,
     };
   }), [year, month, daysInMonth]);
 
-  // Build lookup: date -> employeeId -> shifts[]
   const shiftMap = useMemo(() => {
     const map: Record<string, Record<string, Shift[]>> = {};
     const prefix = `${year}-${String(month + 1).padStart(2, '0')}`;
@@ -68,17 +68,19 @@ export default function MonthView({ onJumpToWeek }: MonthViewProps) {
     return { total: ms.length, staff: new Set(ms.map(s => s.employeeId)).size };
   }, [shifts, year, month]);
 
+  const totalWidth = EMP_COL + DAY_COL * daysInMonth;
+
   return (
-    <div className="flex-1 flex flex-col overflow-hidden bg-[var(--color-bg)]">
-      {/* Month nav */}
-      <div className="px-4 sm:px-6 py-3 border-b border-[var(--color-border)] bg-[var(--color-surface)] flex items-center gap-2 flex-shrink-0">
+    <div className="flex-1 flex flex-col overflow-hidden bg-[var(--color-bg)] month-view-root">
+      {/* Nav bar */}
+      <div className="month-nav px-4 sm:px-6 py-3 border-b border-[var(--color-border)] bg-[var(--color-surface)] flex items-center gap-2 flex-shrink-0">
         <button
           onClick={() => setMonthOffset(o => o - 1)}
           className="w-7 h-7 rounded-md text-[var(--color-text-2)] hover:text-[var(--color-text)] hover:bg-[var(--color-surface-2)] transition-all flex items-center justify-center flex-shrink-0"
         >
           <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M9 3L5 7L9 11" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
         </button>
-        <span className="font-mono text-[14px] font-semibold text-[var(--color-text)] w-40 text-center">{monthLabel}</span>
+        <span className="font-mono text-[14px] font-semibold text-[var(--color-text)] w-40 text-center select-none">{monthLabel}</span>
         <button
           onClick={() => setMonthOffset(o => o + 1)}
           className="w-7 h-7 rounded-md text-[var(--color-text-2)] hover:text-[var(--color-text)] hover:bg-[var(--color-surface-2)] transition-all flex items-center justify-center flex-shrink-0"
@@ -93,105 +95,119 @@ export default function MonthView({ onJumpToWeek }: MonthViewProps) {
             Today
           </button>
         )}
-        <div className="ml-auto flex items-center gap-4 text-[12px] text-[var(--color-muted)]">
+        <div className="ml-auto flex items-center gap-3 text-[12px] text-[var(--color-muted)]">
           <span><span className="font-semibold text-[var(--color-text)]">{monthStats.total}</span> shifts</span>
-          <span><span className="font-semibold text-[var(--color-text)]">{monthStats.staff}</span> staff scheduled</span>
-          <span className="text-[11px] opacity-60 hidden sm:inline">Click any block to open that week</span>
+          <span className="hidden sm:inline"><span className="font-semibold text-[var(--color-text)]">{monthStats.staff}</span> staff</span>
+          {/* Print button */}
+          <button
+            onClick={() => window.print()}
+            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-[var(--color-text-2)] hover:text-[var(--color-text)] hover:bg-[var(--color-surface-2)] transition-all text-[12px] font-medium border border-[var(--color-border-strong)]"
+            title="Print month overview"
+          >
+            <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M3 4V2H10V4" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/><rect x="1" y="4" width="11" height="6" rx="1.5" stroke="currentColor" strokeWidth="1.3"/><path d="M3 10V11H10V10" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/><circle cx="9.5" cy="7" r="0.75" fill="currentColor"/></svg>
+            <span className="hidden sm:inline">Print</span>
+          </button>
         </div>
       </div>
 
-      {/* Gantt grid */}
+      {/* Grid — scrolls horizontally, fills height vertically */}
       <div className="flex-1 overflow-auto">
-        <table className="border-collapse" style={{ tableLayout: 'fixed' }}>
-          <colgroup>
-            <col style={{ width: '128px' }} />
+        {/* Inner wrapper: min-height fills the scroll area so rows stretch */}
+        <div className="flex flex-col min-h-full" style={{ width: totalWidth }}>
+
+          {/* Sticky day-header row */}
+          <div
+            className="flex flex-shrink-0 sticky top-0 z-10 bg-[var(--color-surface)] border-b border-[var(--color-border)]"
+            style={{ width: totalWidth }}
+          >
+            {/* Employee column header */}
+            <div
+              className="flex-shrink-0 flex items-end px-3 pb-2 border-r border-[var(--color-border)]"
+              style={{ width: EMP_COL }}
+            >
+              <span className="text-[10px] font-semibold uppercase tracking-widest text-[var(--color-muted)]">Employee</span>
+            </div>
+            {/* Day headers */}
             {days.map(d => (
-              <col key={d.date} style={{ width: '32px' }} />
-            ))}
-          </colgroup>
-
-          {/* Header: day numbers */}
-          <thead>
-            <tr className="bg-[var(--color-surface)] sticky top-0 z-10">
-              <th className="border-b border-r border-[var(--color-border)] px-3 py-2 text-left">
-                <span className="text-[10px] font-semibold uppercase tracking-widest text-[var(--color-muted)]">Employee</span>
-              </th>
-              {days.map(d => (
-                <th
-                  key={d.date}
-                  className={`border-b border-[var(--color-border)] py-2 text-center align-bottom
-                    ${d.isWeekStart ? 'border-l-2 border-l-[var(--color-border-strong)]' : 'border-l border-l-[var(--color-border)]'}
-                    ${d.isWeekend ? 'bg-[var(--color-bg)]' : ''}
-                  `}
-                >
-                  <div className={`text-[9px] font-semibold uppercase leading-none mb-0.5 ${d.isWeekend ? 'text-[var(--color-muted)]' : 'text-[var(--color-text-2)]'}`}>
-                    {DAY_LETTERS[d.jsDay]}
-                  </div>
-                  <div className={`text-[13px] font-mono font-bold leading-none ${d.isToday ? 'text-[var(--color-accent)]' : d.isWeekend ? 'text-[var(--color-text-2)]' : 'text-[var(--color-text)]'}`}>
-                    {d.dayNum}
-                  </div>
-                  {d.isToday && <div className="w-1 h-1 rounded-full bg-[var(--color-accent)] mx-auto mt-0.5" />}
-                </th>
-              ))}
-            </tr>
-          </thead>
-
-          {/* Employee rows */}
-          <tbody>
-            {employees.map((emp, idx) => (
-              <tr
-                key={emp.id}
-                className={idx % 2 === 0 ? 'bg-white' : 'bg-[var(--color-surface)]'}
+              <div
+                key={d.date}
+                className={`flex-shrink-0 flex flex-col items-center justify-end pb-2 pt-1
+                  ${d.isWeekStart ? 'border-l-2 border-l-[var(--color-border-strong)]' : 'border-l border-l-[var(--color-border)]'}
+                  ${d.isWeekend ? 'bg-[var(--color-bg)]' : ''}
+                `}
+                style={{ width: DAY_COL }}
               >
-                {/* Name cell */}
-                <td className="border-b border-r border-[var(--color-border)] px-3 py-0 h-11">
-                  <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: emp.color }} />
-                    <span className="text-[13px] font-semibold text-[var(--color-text)] truncate">{emp.name}</span>
-                  </div>
-                </td>
+                <span className={`text-[9px] font-bold uppercase leading-none mb-0.5 ${d.isWeekend ? 'text-[var(--color-muted)]' : 'text-[var(--color-text-2)]'}`}>
+                  {DAY_LETTERS[d.jsDay]}
+                </span>
+                <span className={`text-[13px] font-mono font-bold leading-none ${d.isToday ? 'text-[var(--color-accent)]' : d.isWeekend ? 'text-[var(--color-text-2)]' : 'text-[var(--color-text)]'}`}>
+                  {d.dayNum}
+                </span>
+                {d.isToday && <div className="w-1 h-1 rounded-full bg-[var(--color-accent)] mt-0.5" />}
+              </div>
+            ))}
+          </div>
+
+          {/* Employee rows — flex-1 so they share remaining height equally */}
+          <div className="flex flex-col flex-1">
+            {employees.map((emp, idx) => (
+              <div
+                key={emp.id}
+                className={`flex flex-1 border-b border-[var(--color-border)] ${idx % 2 === 0 ? 'bg-white' : 'bg-[var(--color-surface)]'}`}
+                style={{ minHeight: 44 }}
+              >
+                {/* Name */}
+                <div
+                  className="flex-shrink-0 flex items-center gap-2 px-3 border-r border-[var(--color-border)]"
+                  style={{ width: EMP_COL }}
+                >
+                  <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: emp.color }} />
+                  <span className="text-[13px] font-semibold text-[var(--color-text)] truncate">{emp.name}</span>
+                </div>
 
                 {/* Day cells */}
                 {days.map(d => {
                   const dayShifts = shiftMap[d.date]?.[emp.id] ?? [];
                   const hasShift = dayShifts.length > 0;
                   const shift = dayShifts[0];
-                  const tooltipText = hasShift
+                  const tooltip = hasShift
                     ? `${emp.name} · ${formatTime(shift.startTime)}–${formatTime(shift.endTime)}${shift.note ? ` · ${shift.note}` : ''}`
                     : undefined;
-                  const weekOffset = hasShift ? weekOffsetForDate(parseISODate(d.date)) : 0;
+                  const weekOff = hasShift ? weekOffsetForDate(parseISODate(d.date)) : 0;
 
                   return (
-                    <td
+                    <div
                       key={d.date}
-                      title={tooltipText}
-                      onClick={hasShift ? () => onJumpToWeek(weekOffset) : undefined}
-                      className={`border-b border-[var(--color-border)] h-11 text-center align-middle
+                      title={tooltip}
+                      onClick={hasShift ? () => onJumpToWeek(weekOff) : undefined}
+                      className={`flex-shrink-0 flex items-center justify-center
                         ${d.isWeekStart ? 'border-l-2 border-l-[var(--color-border-strong)]' : 'border-l border-l-[var(--color-border)]'}
                         ${d.isWeekend ? 'bg-black/[0.015]' : ''}
                         ${d.isToday ? 'bg-[var(--color-accent-subtle)]' : ''}
                         ${hasShift ? 'cursor-pointer group' : ''}
                       `}
+                      style={{ width: DAY_COL }}
                     >
                       {hasShift ? (
                         <div
-                          className="mx-auto w-5 h-6 rounded-sm transition-all group-hover:w-6 group-hover:brightness-110"
-                          style={{ backgroundColor: emp.color }}
+                          className="rounded-sm transition-all group-hover:brightness-110"
+                          style={{ backgroundColor: emp.color, width: 20, height: '55%', minHeight: 20, maxHeight: 48 }}
                         />
                       ) : (
-                        <div className="mx-auto w-4 h-px bg-[var(--color-border)]" />
+                        <div className="w-4 h-px bg-[var(--color-border)]" />
                       )}
-                    </td>
+                    </div>
                   );
                 })}
-              </tr>
+              </div>
             ))}
-          </tbody>
-        </table>
+          </div>
+
+        </div>
       </div>
 
       {/* Legend */}
-      <div className="px-4 sm:px-6 py-2 border-t border-[var(--color-border)] bg-[var(--color-surface)] flex items-center gap-4 flex-wrap flex-shrink-0">
+      <div className="month-legend px-4 sm:px-6 py-2 border-t border-[var(--color-border)] bg-[var(--color-surface)] flex items-center gap-4 flex-wrap flex-shrink-0">
         {employees.map(emp => (
           <div key={emp.id} className="flex items-center gap-1.5">
             <div className="w-3 h-3 rounded-sm flex-shrink-0" style={{ backgroundColor: emp.color }} />
@@ -199,6 +215,16 @@ export default function MonthView({ onJumpToWeek }: MonthViewProps) {
           </div>
         ))}
       </div>
+
+      {/* Print styles */}
+      <style>{`
+        @media print {
+          body > * { display: none !important; }
+          .month-view-root { display: flex !important; position: fixed; inset: 0; }
+          .month-nav, .month-legend { display: none !important; }
+          @page { size: landscape; margin: 8mm; }
+        }
+      `}</style>
     </div>
   );
 }
