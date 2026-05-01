@@ -22,8 +22,8 @@ function weekOffsetForDate(date: Date): number {
 }
 
 const DAY_LETTERS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
-const EMP_COL = 140;
-const DAY_COL = 32;
+const EMP_COL = 130;
+const DAY_COL = 28;
 
 export default function MonthView({ onJumpToWeek }: MonthViewProps) {
   const { employees, shifts } = useSchedulerContext();
@@ -200,7 +200,7 @@ export default function MonthView({ onJumpToWeek }: MonthViewProps) {
                     {hasShift ? (
                       <div
                         className="rounded-sm transition-all group-hover:brightness-110 group-hover:scale-110"
-                        style={{ backgroundColor: emp.color, width: 20, height: 28 }}
+                        style={{ backgroundColor: emp.color, width: 18, height: 26 }}
                       />
                     ) : (
                       <div className="w-4 h-px bg-[var(--color-border)]" />
