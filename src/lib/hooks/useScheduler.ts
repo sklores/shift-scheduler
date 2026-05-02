@@ -321,20 +321,22 @@ export function useScheduler(adapter: DataAdapter) {
         skipped++;
         continue;
       }
-      await adapter.addShift({
-        employeeId: item.employeeId,
-        date,
-        startTime: item.startTime,
-        endTime: item.endTime,
-        note: item.note,
-      });
+
+      if (isDraftMode) {
+        // Route through addShift so phantom-date logic applies
+        await addShift({ employeeId: item.employeeId, date, startTime: item.startTime, endTime: item.endTime, note: item.note });
+      } else {
+        await adapter.addShift({ employeeId: item.employeeId, date, startTime: item.startTime, endTime: item.endTime, note: item.note });
+      }
       added++;
     }
 
-    const updatedShifts = await adapter.getShifts();
-    setShifts(updatedShifts);
+    if (!isDraftMode) {
+      const updatedShifts = await adapter.getShifts();
+      setShifts(updatedShifts);
+    }
     return { added, skipped };
-  }, [adapter, templates, currentWeekShifts, employees, weekOffset]);
+  }, [adapter, addShift, isDraftMode, templates, currentWeekShifts, employees, weekOffset]);
 
   const renameTemplate = useCallback(async (id: string, name: string) => {
     const tmpl = await adapter.updateTemplate(id, { name, updatedAt: Date.now() });

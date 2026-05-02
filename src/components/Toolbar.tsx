@@ -74,6 +74,12 @@ export default function Toolbar({ onAddShift, onClearWeek, onSaveTemplate, onApp
               Apply to This Week
             </button>
             <button
+              onClick={onApplyTemplate}
+              className="text-[13px] font-medium px-3.5 py-2 rounded-lg bg-transparent text-amber-800 border border-amber-300 hover:bg-amber-100 transition-all flex-shrink-0"
+            >
+              Load Template
+            </button>
+            <button
               onClick={onSaveTemplate}
               disabled={draftShifts.length === 0}
               className="text-[13px] font-medium px-3.5 py-2 rounded-lg bg-transparent text-amber-800 border border-amber-300 hover:bg-amber-100 transition-all flex-shrink-0 disabled:opacity-40 disabled:cursor-not-allowed"
