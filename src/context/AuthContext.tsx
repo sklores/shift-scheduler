@@ -41,6 +41,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const embeddedPass = getParam('k');
     const embeddedRole = getParam('role') as UserRole | null;
 
+    // Always keep session state in sync
+    const { data: sub } = supabase.auth.onAuthStateChange((_event, s) => {
+      setSession(s ?? null);
+    });
+
     // Auto-sign-in when running inside the And Done desktop iframe
     if (isEmbedded && embeddedPass) {
       const autoSignIn = async () => {
@@ -55,6 +60,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             access_token: data.access_token,
             refresh_token: data.refresh_token,
           });
+          // Explicitly read back the session so AppGate can unblock
+          const { data: sd } = await supabase.auth.getSession();
+          setSession(sd.session ?? null);
           const resolvedRole: UserRole =
             embeddedRole === 'employee' ? 'employee' : 'owner';
           setRole(resolvedRole);
@@ -62,7 +70,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setLoading(false);
       };
       autoSignIn();
-      return;
+      return () => { sub.subscription.unsubscribe(); };
     }
 
     // Normal flow — restore any existing session
@@ -71,9 +79,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setLoading(false);
     });
 
-    const { data: sub } = supabase.auth.onAuthStateChange((_event, s) => {
-      setSession(s ?? null);
-    });
     return () => { sub.subscription.unsubscribe(); };
   }, [supabase, isEmbedded]);
 
