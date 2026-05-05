@@ -15,7 +15,43 @@ interface HeaderProps {
 
 export default function Header({ onOpenDrawer, onOpenPublish, viewMode, onSetViewMode }: HeaderProps) {
   const { weekLabel, weekLabelCompact, changeWeek, isDraftMode, toggleDraftMode } = useSchedulerContext();
-  const { signOut, isOwner } = useAuth();
+  const { signOut, isOwner, isEmbedded } = useAuth();
+
+  // In embedded mode, render a slim bar with just week nav + view toggle
+  if (isEmbedded) {
+    return (
+      <header className={`${isDraftMode ? 'bg-amber-900' : 'bg-[var(--color-text)]'} text-white px-3 sm:px-4 flex items-center gap-2 justify-between h-11 sticky top-0 z-50 shadow-sm w-full min-w-0 transition-colors duration-200`}>
+        {/* Week nav */}
+        <div className="flex items-center gap-1 font-mono text-white/80 flex-1 min-w-0 justify-start">
+          {isDraftMode ? (
+            <span className="text-[13px] font-medium text-amber-200/70">Draft Week</span>
+          ) : viewMode === 'month' ? (
+            <span className="text-[13px] font-medium text-white/60">Month Overview</span>
+          ) : (
+            <>
+              <button onClick={() => changeWeek(-1)} className="w-7 h-7 rounded-md text-white/70 hover:text-white hover:bg-white/10 transition-all flex items-center justify-center flex-shrink-0" aria-label="Previous week">
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M9 3L5 7L9 11" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+              </button>
+              <span className="text-[13px] font-medium tracking-wide truncate px-1">{weekLabel}</span>
+              <button onClick={() => changeWeek(1)} className="w-7 h-7 rounded-md text-white/70 hover:text-white hover:bg-white/10 transition-all flex items-center justify-center flex-shrink-0" aria-label="Next week">
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M5 3L9 7L5 11" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+              </button>
+            </>
+          )}
+        </div>
+        {/* View toggle */}
+        <div className="flex items-center rounded-md overflow-hidden border border-white/20 text-[12px] font-medium flex-shrink-0">
+          <button onClick={() => onSetViewMode('week')} className={`px-2.5 py-1 transition-colors ${viewMode === 'week' ? 'bg-white/20 text-white' : 'text-white/50 hover:text-white/80 hover:bg-white/10'}`}>Week</button>
+          <button onClick={() => onSetViewMode('month')} className={`px-2.5 py-1 transition-colors ${viewMode === 'month' ? 'bg-white/20 text-white' : 'text-white/50 hover:text-white/80 hover:bg-white/10'}`}>Month</button>
+        </div>
+        {isDraftMode && (
+          <button onClick={toggleDraftMode} className="ml-2 px-3 py-1 rounded-md bg-amber-700/60 border border-amber-500/40 text-amber-100 hover:bg-amber-700 text-[12px] font-medium transition-all flex-shrink-0">
+            Exit Draft
+          </button>
+        )}
+      </header>
+    );
+  }
 
   return (
     <header className={`${isDraftMode ? 'bg-amber-900' : 'bg-[var(--color-text)]'} text-white px-3 sm:px-6 flex items-center gap-2 justify-between h-14 sticky top-0 z-50 shadow-sm w-full min-w-0 transition-colors duration-200`}>

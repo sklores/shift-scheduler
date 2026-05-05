@@ -12,12 +12,19 @@ interface AuthState {
   supabase: SupabaseClient;
   role: UserRole;
   isOwner: boolean;
+  isEmbedded: boolean;
   /** Sign in via the beta password gate. Returns { ok: true } or { error }. */
   signIn: (password: string, role: UserRole) => Promise<{ ok: true } | { error: string }>;
   signOut: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthState | null>(null);
+
+/** Read URL search params safely (SSR guard). */
+function getParam(key: string): string | null {
+  if (typeof window === 'undefined') return null;
+  return new URLSearchParams(window.location.search).get(key);
+}
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [supabase] = useState(() => getSupabase());
@@ -27,19 +34,48 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try { return (localStorage.getItem('shift-role') as UserRole) ?? 'owner'; } catch { return 'owner'; }
   });
 
+  // Detect embedded mode from URL: ?embedded=true&role=owner&k=PASSWORD
+  const isEmbedded = typeof window !== 'undefined' && getParam('embedded') === 'true';
+
   useEffect(() => {
-    // Restore any existing session on mount
+    const embeddedPass = getParam('k');
+    const embeddedRole = getParam('role') as UserRole | null;
+
+    // Auto-sign-in when running inside the And Done desktop iframe
+    if (isEmbedded && embeddedPass) {
+      const autoSignIn = async () => {
+        const res = await fetch('/api/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ password: embeddedPass }),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (res.ok && data?.access_token) {
+          await supabase.auth.setSession({
+            access_token: data.access_token,
+            refresh_token: data.refresh_token,
+          });
+          const resolvedRole: UserRole =
+            embeddedRole === 'employee' ? 'employee' : 'owner';
+          setRole(resolvedRole);
+        }
+        setLoading(false);
+      };
+      autoSignIn();
+      return;
+    }
+
+    // Normal flow — restore any existing session
     supabase.auth.getSession().then(({ data }) => {
       setSession(data.session ?? null);
       setLoading(false);
     });
 
-    // Stay in sync with sign in / sign out / token refresh
     const { data: sub } = supabase.auth.onAuthStateChange((_event, s) => {
       setSession(s ?? null);
     });
     return () => { sub.subscription.unsubscribe(); };
-  }, [supabase]);
+  }, [supabase, isEmbedded]);
 
   const signIn = useCallback(async (password: string, selectedRole: UserRole = 'owner') => {
     const res = await fetch('/api/login', {
@@ -68,7 +104,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [supabase]);
 
   return (
-    <AuthContext.Provider value={{ session, loading, supabase, role, isOwner: role === 'owner', signIn, signOut }}>
+    <AuthContext.Provider value={{ session, loading, supabase, role, isOwner: role === 'owner', isEmbedded, signIn, signOut }}>
       {children}
     </AuthContext.Provider>
   );
