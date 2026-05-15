@@ -92,6 +92,13 @@ export default function Toolbar({ onAddShift, onClearWeek, onSaveTemplate, onApp
             >
               Clear Draft
             </button>
+
+            {/* Stats — desktop, same as normal mode */}
+            <div className="hidden md:flex ml-auto gap-2">
+              {isOwner && <CostStat labor={weekStats.totalCost} />}
+              <Stat label="Hours" value={`${weekStats.totalHours.toFixed(0)}h`} />
+              <Stat label="Shifts" value={String(weekStats.totalShifts)} />
+            </div>
           </>
         ) : (
           /* ── Normal mode actions ── */
