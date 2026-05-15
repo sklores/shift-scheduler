@@ -27,7 +27,7 @@ export interface ToastTipsData {
 }
 
 export default function Scheduler() {
-  const { isLoading, clearWeek, currentWeekShifts, deleteShift, copyWeek, pasteWeek, weekStart, jumpToWeek } = useSchedulerContext();
+  const { isLoading, clearWeek, currentWeekShifts, deleteShift, copyWeek, pasteWeek, weekStart, jumpToWeek, isDraftMode } = useSchedulerContext();
   const { isOwner } = useAuth();
   const toast = useToast();
   const confirm = useConfirm();
@@ -209,8 +209,8 @@ export default function Scheduler() {
               onAddShift={handleAddShift}
               onEditShift={handleEditShift}
               onDeleteShift={handleDeleteShift}
-              toastTips={toastTips}
-              tipsLoading={tipsLoading}
+              toastTips={isDraftMode ? null : toastTips}
+              tipsLoading={isDraftMode ? false : tipsLoading}
             />
           </div>
         </>
@@ -219,7 +219,7 @@ export default function Scheduler() {
           onJumpToWeek={(offset) => { jumpToWeek(offset); setViewMode('week'); }}
         />
       )}
-      {isOwner && viewMode === 'week' && (
+      {isOwner && viewMode === 'week' && !isDraftMode && (
         <LaborBreakdownBar
           toastTips={toastTips}
           tipsLoading={tipsLoading}

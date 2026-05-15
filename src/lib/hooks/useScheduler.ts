@@ -64,6 +64,9 @@ export function useScheduler(adapter: DataAdapter) {
   const [isDraftMode, setIsDraftMode] = useState(false);
   const [draftShifts, setDraftShifts] = useState<Shift[]>([]);
 
+  // Last-applied template — used by SaveTemplateModal to offer "Update [name]"
+  const [lastAppliedTemplateId, setLastAppliedTemplateId] = useState<string | null>(null);
+
   // Save status tracking — updates on every write, fades back to idle after success
   const [saveStatus, setSaveStatus] = useState<SaveStatus>('idle');
   const [saveError, setSaveError] = useState<string | null>(null);
@@ -203,6 +206,7 @@ export function useScheduler(adapter: DataAdapter) {
   const clearWeek = useCallback(async () => {
     if (isDraftMode) {
       setDraftShifts([]); saveDraftToStorage([]);
+      setLastAppliedTemplateId(null);
       return;
     }
     const toDelete = currentWeekShifts.map(s => s.id);
@@ -306,6 +310,7 @@ export function useScheduler(adapter: DataAdapter) {
   const applyTemplate = useCallback(async (templateId: string) => {
     const tmpl = templates.find(t => t.id === templateId);
     if (!tmpl) return { added: 0, skipped: 0 };
+    setLastAppliedTemplateId(templateId);
 
     const existingKeys = new Set(
       currentWeekShifts.map(s => `${s.employeeId}-${s.date}-${s.startTime}-${s.endTime}`)
@@ -346,7 +351,20 @@ export function useScheduler(adapter: DataAdapter) {
   const deleteTemplate = useCallback(async (id: string) => {
     await adapter.removeTemplate(id);
     setTemplates(prev => prev.filter(t => t.id !== id));
+    setLastAppliedTemplateId(prev => (prev === id ? null : prev));
   }, [adapter]);
+
+  /** Overwrite an existing template's items with the current week's shifts. */
+  const overwriteTemplate = useCallback(async (id: string) => {
+    const items = currentWeekShifts.map(s => {
+      const jsDay = new Date(s.date + 'T00:00:00').getDay();
+      const dayIdx = jsDay === 0 ? 6 : jsDay - 1;
+      return { employeeId: s.employeeId, dayIndex: dayIdx, startTime: s.startTime, endTime: s.endTime, note: s.note };
+    });
+    const updated = await adapter.updateTemplate(id, { items, updatedAt: Date.now() });
+    setTemplates(prev => prev.map(t => t.id === id ? updated : t));
+    return updated;
+  }, [adapter, currentWeekShifts]);
 
   // --- Availability block actions ---
   const addAvailabilityBlock = useCallback(async (data: Omit<AvailabilityBlock, 'id'>) => {
@@ -375,7 +393,11 @@ export function useScheduler(adapter: DataAdapter) {
   // --- Draft mode actions ---
   const toggleDraftMode = useCallback(() => {
     setIsDraftMode(prev => {
-      if (!prev) setDraftShifts(loadDraftFromStorage()); // load on enter
+      if (!prev) {
+        setDraftShifts(loadDraftFromStorage()); // load on enter
+      } else {
+        setLastAppliedTemplateId(null); // clear on exit
+      }
       return !prev;
     });
   }, []);
@@ -477,8 +499,10 @@ export function useScheduler(adapter: DataAdapter) {
     saveTemplate,
     saveTemplateFromItems,
     applyTemplate,
+    overwriteTemplate,
     renameTemplate,
     deleteTemplate,
+    lastAppliedTemplateId,
 
     // Availability
     availabilityBlocks,
