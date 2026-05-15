@@ -145,9 +145,13 @@ export function useScheduler(adapter: DataAdapter) {
 
   const updateShift = useCallback(async (id: string, updates: Partial<Shift>) => {
     if (isDraftMode) {
+      // Modal passes real dates — convert back to phantom so week-offset independence holds.
+      const draftUpdates: Partial<Shift> = updates.date
+        ? { ...updates, date: currentDateToPhantomDate(updates.date, weekOffset) }
+        : updates;
       let updated!: Shift;
       setDraftShifts(prev => {
-        const next = prev.map(s => s.id === id ? (updated = { ...s, ...updates }) : s);
+        const next = prev.map(s => s.id === id ? (updated = { ...s, ...draftUpdates }) : s);
         saveDraftToStorage(next);
         return next;
       });
@@ -459,6 +463,15 @@ export function useScheduler(adapter: DataAdapter) {
     return employees.find(e => e.id === id);
   }, [employees]);
 
+  /**
+   * Look up a shift by id across both the real and draft shift arrays.
+   * Uses currentWeekShifts so draft shifts are returned with their real
+   * (re-dated) dates rather than phantom dates — safe for the modal to display.
+   */
+  const getShiftById = useCallback((id: string): Shift | undefined => {
+    return currentWeekShifts.find(s => s.id === id) ?? shifts.find(s => s.id === id);
+  }, [currentWeekShifts, shifts]);
+
   const nextColor = useMemo(() => {
     return EMPLOYEE_COLORS[employees.length % EMPLOYEE_COLORS.length];
   }, [employees.length]);
@@ -528,6 +541,7 @@ export function useScheduler(adapter: DataAdapter) {
     conflictingShiftIds,
     getShiftsForCell,
     getEmployeeById,
+    getShiftById,
     nextColor,
   };
 }

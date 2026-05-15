@@ -19,11 +19,14 @@ interface ShiftModalProps {
 }
 
 export default function ShiftModal({ isOpen, onClose, editShiftId, prefillEmpId, prefillDate, onToast, onDelete }: ShiftModalProps) {
-  const { employees, shifts, weekOffset, weekDates, addShift, updateShift, addAvailabilityBlock } = useSchedulerContext();
+  const { employees, weekOffset, weekDates, addShift, updateShift, addAvailabilityBlock, getShiftById } = useSchedulerContext();
   const [markingUnavailable, setMarkingUnavailable] = useState(false);
   const timeOptions = useMemo(() => generateTimeOptions(), []);
 
-  const editShift = editShiftId ? shifts.find(s => s.id === editShiftId) : null;
+  // getShiftById searches currentWeekShifts first (handles draft mode where
+  // draft shifts are absent from the raw `shifts` array) then falls back to
+  // the full shifts array for cross-week edits.
+  const editShift = editShiftId ? getShiftById(editShiftId) ?? null : null;
 
   // Lazy initializers — parent remounts on every open via key=, so these run fresh.
   const [empId, setEmpId] = useState(() => editShift?.employeeId || prefillEmpId || employees[0]?.id || '');
@@ -34,16 +37,26 @@ export default function ShiftModal({ isOpen, onClose, editShiftId, prefillEmpId,
   const [endTime, setEndTime] = useState(() => editShift?.endTime || '17:00');
   const [note, setNote] = useState(() => editShift?.note || '');
 
-  // Safety sync: in React 18 concurrent mode the key-based remount can fire before
-  // all parent state updates (prefillEmpId / prefillDate) are committed, causing the
-  // lazy initializers above to read stale null values and default to the first
-  // employee / Monday (the "top-left box" bug). This effect corrects that after mount.
+  // Safety sync — runs once on mount with the latest prop values.
+  // For EDIT mode: corrects state when the lazy initializer saw a stale/null editShift
+  // (e.g. draft mode, where shifts[] doesn't include draft shifts).
+  // For ADD mode: corrects prefill values that concurrent-mode committed after the key remount.
   useEffect(() => {
-    if (editShiftId) return; // editing existing shift — don't overwrite
-    if (prefillEmpId) setEmpId(prefillEmpId);
-    if (prefillDate)  setDate(prefillDate);
+    if (editShiftId) {
+      const found = getShiftById(editShiftId);
+      if (found) {
+        setEmpId(found.employeeId);
+        setDate(found.date);
+        setStartTime(found.startTime);
+        setEndTime(found.endTime);
+        setNote(found.note);
+      }
+    } else {
+      if (prefillEmpId) setEmpId(prefillEmpId);
+      if (prefillDate)  setDate(prefillDate);
+    }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // intentionally empty — runs once on mount with the latest prop values
+  }, []); // intentionally empty — runs once on mount with the latest prop/closure values
 
   // Build day options for the Day dropdown:
   // - Current week's 7 dates, labeled "Mon Apr 13"
