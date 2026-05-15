@@ -34,6 +34,17 @@ export default function ShiftModal({ isOpen, onClose, editShiftId, prefillEmpId,
   const [endTime, setEndTime] = useState(() => editShift?.endTime || '17:00');
   const [note, setNote] = useState(() => editShift?.note || '');
 
+  // Safety sync: in React 18 concurrent mode the key-based remount can fire before
+  // all parent state updates (prefillEmpId / prefillDate) are committed, causing the
+  // lazy initializers above to read stale null values and default to the first
+  // employee / Monday (the "top-left box" bug). This effect corrects that after mount.
+  useEffect(() => {
+    if (editShiftId) return; // editing existing shift — don't overwrite
+    if (prefillEmpId) setEmpId(prefillEmpId);
+    if (prefillDate)  setDate(prefillDate);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // intentionally empty — runs once on mount with the latest prop values
+
   // Build day options for the Day dropdown:
   // - Current week's 7 dates, labeled "Mon Apr 13"
   // - If editing a shift on a different week, ADD that date to the list
