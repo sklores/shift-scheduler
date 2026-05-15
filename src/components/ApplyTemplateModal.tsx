@@ -23,7 +23,10 @@ export default function ApplyTemplateModal({ isOpen, onClose, onToast }: ApplyTe
   const handleApply = async () => {
     if (!selectedId) return;
     const result = await applyTemplate(selectedId);
-    onToast(`${result.added} shifts added · ${result.skipped} skipped`);
+    const msg = result.skipped > 0
+      ? `${result.added} shifts loaded · ${result.skipped} skipped (employee not found)`
+      : `${result.added} shifts loaded`;
+    onToast(msg);
     onClose();
   };
 

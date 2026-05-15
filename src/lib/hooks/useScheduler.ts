@@ -312,20 +312,22 @@ export function useScheduler(adapter: DataAdapter) {
     if (!tmpl) return { added: 0, skipped: 0 };
     setLastAppliedTemplateId(templateId);
 
-    const existingKeys = new Set(
-      currentWeekShifts.map(s => `${s.employeeId}-${s.date}-${s.startTime}-${s.endTime}`)
-    );
+    // Clear existing shifts first so the template is applied clean (no doubles)
+    if (isDraftMode) {
+      setDraftShifts([]); saveDraftToStorage([]);
+    } else {
+      const toDelete = currentWeekShifts.map(s => s.id);
+      for (const id of toDelete) await adapter.removeShift(id);
+      setShifts(prev => prev.filter(s => !(s.date >= weekStart && s.date <= weekEnd)));
+    }
+
+    const validEmpIds = new Set(employees.map(e => e.id));
     let added = 0;
     let skipped = 0;
 
     for (const item of tmpl.items) {
       const date = getDateForCell(weekOffset, item.dayIndex);
-      const empExists = employees.some(e => e.id === item.employeeId);
-      const key = `${item.employeeId}-${date}-${item.startTime}-${item.endTime}`;
-      if (!empExists || existingKeys.has(key)) {
-        skipped++;
-        continue;
-      }
+      if (!validEmpIds.has(item.employeeId)) { skipped++; continue; }
 
       if (isDraftMode) {
         // Route through addShift so phantom-date logic applies
@@ -341,7 +343,7 @@ export function useScheduler(adapter: DataAdapter) {
       setShifts(updatedShifts);
     }
     return { added, skipped };
-  }, [adapter, addShift, isDraftMode, templates, currentWeekShifts, employees, weekOffset]);
+  }, [adapter, addShift, isDraftMode, templates, currentWeekShifts, employees, weekOffset, weekStart, weekEnd]);
 
   const renameTemplate = useCallback(async (id: string, name: string) => {
     const tmpl = await adapter.updateTemplate(id, { name, updatedAt: Date.now() });
