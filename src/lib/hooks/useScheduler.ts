@@ -407,8 +407,11 @@ export function useScheduler(adapter: DataAdapter) {
   /** Apply draft shifts to the currently displayed week in Supabase. Skips duplicates. */
   const applyDraftToWeek = useCallback(async () => {
     if (!isDraftMode || draftShifts.length === 0) return { added: 0, skipped: 0 };
+    // Use the real persisted shifts (not currentWeekShifts — that returns re-dated draft
+    // shifts in draft mode, so every draft shift would match its own key and be skipped).
+    const realWeekShifts = shifts.filter(s => s.date >= weekStart && s.date <= weekEnd);
     const existingKeys = new Set(
-      currentWeekShifts.map(s => `${s.employeeId}-${s.date}-${s.startTime}-${s.endTime}`)
+      realWeekShifts.map(s => `${s.employeeId}-${s.date}-${s.startTime}-${s.endTime}`)
     );
     const validEmpIds = new Set(employees.map(e => e.id));
     let added = 0; let skipped = 0;
@@ -424,7 +427,7 @@ export function useScheduler(adapter: DataAdapter) {
     const updated = await adapter.getShifts();
     setShifts(updated);
     return { added, skipped };
-  }, [isDraftMode, draftShifts, currentWeekShifts, employees, weekOffset, adapter]);
+  }, [isDraftMode, draftShifts, shifts, weekStart, weekEnd, employees, weekOffset, adapter]);
 
   // --- Week navigation ---
   const changeWeek = useCallback((dir: -1 | 1) => {
