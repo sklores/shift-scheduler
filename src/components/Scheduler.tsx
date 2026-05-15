@@ -35,11 +35,17 @@ export default function Scheduler() {
   const [viewMode, setViewMode] = useState<ViewMode>('week');
   const [isDrawerOpen, setDrawerOpen] = useState(false);
 
-  const [isShiftModalOpen, setShiftModalOpen] = useState(false);
-  const [editShiftId, setEditShiftId] = useState<string | null>(null);
-  const [prefillEmpId, setPrefillEmpId] = useState<string | null>(null);
-  const [prefillDate, setPrefillDate] = useState<string | null>(null);
-  const [shiftModalKey, setShiftModalKey] = useState(0);
+  // All shift-modal state in ONE object so React always commits them atomically.
+  // Splitting across useState calls caused a concurrent-mode race where the modal
+  // remounted (key changed) before editShiftId / prefill values were committed,
+  // making the modal default to the first employee / Monday (top-left box).
+  const [shiftModal, setShiftModal] = useState<{
+    isOpen: boolean;
+    key: number;
+    editShiftId: string | null;
+    prefillEmpId: string | null;
+    prefillDate: string | null;
+  }>({ isOpen: false, key: 0, editShiftId: null, prefillEmpId: null, prefillDate: null });
 
   const [isPublishOpen, setPublishOpen] = useState(false);
   const [isSaveTemplateOpen, setSaveTemplateOpen] = useState(false);
@@ -76,19 +82,11 @@ export default function Scheduler() {
   }, [fetchTips]);
 
   const handleAddShift = useCallback((empId: string | null = null, date: string | null = null) => {
-    setEditShiftId(null);
-    setPrefillEmpId(empId);
-    setPrefillDate(date);
-    setShiftModalKey(k => k + 1);
-    setShiftModalOpen(true);
+    setShiftModal(s => ({ ...s, isOpen: true, key: s.key + 1, editShiftId: null, prefillEmpId: empId, prefillDate: date }));
   }, []);
 
   const handleEditShift = useCallback((shiftId: string) => {
-    setEditShiftId(shiftId);
-    setPrefillEmpId(null);
-    setPrefillDate(null);
-    setShiftModalKey(k => k + 1);
-    setShiftModalOpen(true);
+    setShiftModal(s => ({ ...s, isOpen: true, key: s.key + 1, editShiftId: shiftId, prefillEmpId: null, prefillDate: null }));
   }, []);
 
   const handleDeleteShift = useCallback(async (shiftId: string) => {
@@ -237,12 +235,12 @@ export default function Scheduler() {
         onConfirm={confirm.ask}
       />
       <ShiftModal
-        key={shiftModalKey}
-        isOpen={isShiftModalOpen}
-        onClose={() => setShiftModalOpen(false)}
-        editShiftId={editShiftId}
-        prefillEmpId={prefillEmpId}
-        prefillDate={prefillDate}
+        key={shiftModal.key}
+        isOpen={shiftModal.isOpen}
+        onClose={() => setShiftModal(s => ({ ...s, isOpen: false }))}
+        editShiftId={shiftModal.editShiftId}
+        prefillEmpId={shiftModal.prefillEmpId}
+        prefillDate={shiftModal.prefillDate}
         onToast={toast.show}
         onDelete={handleDeleteShift}
       />
