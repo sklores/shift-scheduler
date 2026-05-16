@@ -19,7 +19,7 @@ interface ShiftModalProps {
 }
 
 export default function ShiftModal({ isOpen, onClose, editShiftId, prefillEmpId, prefillDate, onToast, onDelete }: ShiftModalProps) {
-  const { employees, weekOffset, weekDates, addShift, updateShift, addAvailabilityBlock, getShiftById } = useSchedulerContext();
+  const { employees, weekOffset, weekDates, addShift, updateShift, addAvailabilityBlock, getShiftById, currentWeekShifts } = useSchedulerContext();
   const [markingUnavailable, setMarkingUnavailable] = useState(false);
   const timeOptions = useMemo(() => generateTimeOptions(), []);
 
@@ -57,6 +57,23 @@ export default function ShiftModal({ isOpen, onClose, editShiftId, prefillEmpId,
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // intentionally empty — runs once on mount with the latest prop/closure values
+
+  // Retry effect: if getShiftById returned undefined at mount (data hadn't arrived yet),
+  // re-apply as soon as currentWeekShifts updates. The user hasn't interacted yet so
+  // overwriting state is safe. No-ops once the shift is found.
+  const correctedRef = useRef(false);
+  useEffect(() => {
+    if (!editShiftId || correctedRef.current) return;
+    const found = getShiftById(editShiftId);
+    if (!found) return;
+    correctedRef.current = true;
+    setEmpId(found.employeeId);
+    setDate(found.date);
+    setStartTime(found.startTime);
+    setEndTime(found.endTime);
+    setNote(found.note);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentWeekShifts]); // re-runs when shift data arrives; editShiftId stable across renders
 
   // Build day options for the Day dropdown:
   // - Current week's 7 dates, labeled "Mon Apr 13"

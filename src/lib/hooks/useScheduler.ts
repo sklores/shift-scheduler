@@ -160,7 +160,7 @@ export function useScheduler(adapter: DataAdapter) {
     const shift = await track(() => adapter.updateShift(id, updates));
     setShifts(prev => prev.map(s => s.id === id ? shift : s));
     return shift;
-  }, [adapter, track, isDraftMode]);
+  }, [adapter, track, isDraftMode, weekOffset]);
 
   const deleteShift = useCallback(async (id: string) => {
     if (isDraftMode) {
