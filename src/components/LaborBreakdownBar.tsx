@@ -93,7 +93,7 @@ export default function LaborBreakdownBar({ toastTips, tipsLoading, tipsError, o
           error={tipsError}
           onRefresh={onRefreshTips}
         />
-        <Card label="Payroll Tax" value={formatCurrency(b.tax)} sublabel={`~${pct}% of subtotal`} />
+        <Card label="Payroll Tax" value={formatCurrency(b.tax)} sublabel={`~${pct}% of wages + tips`} />
         <div className="flex items-center px-1 text-[var(--color-muted)] text-lg font-light flex-shrink-0" aria-hidden>=</div>
         <Card label="Total" value={formatCurrency(b.total)} sublabel="All-in weekly" big />
         <Card label="Total Hours" value={`${weekStats.totalHours.toFixed(0)}h`} sublabel={`${weekStats.totalShifts} shift${weekStats.totalShifts !== 1 ? 's' : ''}`} />
@@ -197,9 +197,9 @@ function ToastTipsCard({
         {error ? (
           <span className="text-[var(--color-warn)]" title={error}>Toast unavailable</span>
         ) : fetchedTime ? (
-          `Updated ${fetchedTime}`
+          `Updated ${fetchedTime} · taxed`
         ) : (
-          'Weekly total'
+          'Included in taxable base'
         )}
       </div>
 
