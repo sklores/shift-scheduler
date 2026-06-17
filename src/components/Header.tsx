@@ -58,7 +58,7 @@ export default function Header({ onOpenDrawer, onOpenPublish, viewMode, onSetVie
       {/* Logo */}
       <div className="flex items-center gap-2.5 flex-shrink-0">
         <div className="font-mono text-[18px] sm:text-[19px] font-semibold tracking-[-0.02em]">
-          <span className={isDraftMode ? 'text-amber-400' : 'text-[var(--color-accent)]'}>&amp;</span>shift
+          <span className={isDraftMode ? 'text-amber-400' : 'text-[var(--color-teal)]'}>&amp;</span>shift
         </div>
         {isDraftMode && (
           <span className="hidden sm:inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-700/60 border border-amber-500/40 text-amber-200 text-[10px] font-mono font-semibold uppercase tracking-widest">
