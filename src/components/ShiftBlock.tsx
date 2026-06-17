@@ -1,8 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import type { Shift, Employee } from '@/lib/data/types';
-import { ROLE_COLORS } from '@/lib/data/types';
+import type { Shift, Employee, EmployeeRole } from '@/lib/data/types';
+import { ROLE_COLORS, ROLE_TINTS } from '@/lib/data/types';
 import { formatTime, calcHours } from '@/lib/utils/time';
 
 interface ShiftBlockProps {
@@ -27,7 +27,10 @@ export default function ShiftBlock({
   conflict = false,
 }: ShiftBlockProps) {
   const [isDragging, setIsDragging] = useState(false);
-  const bg = employee ? (ROLE_COLORS[employee.role] ?? '#1f1b16') : '#1f1b16';
+  const role: EmployeeRole | undefined = employee?.role;
+  // Soft-tint & done treatment: light tinted bg, role hue as text + 3px left bar.
+  const anchor = role ? (ROLE_COLORS[role] ?? '#2c3a35') : '#2c3a35';
+  const tint = role ? (ROLE_TINTS[role] ?? '#eef3f3') : '#eef3f3';
   const hours = calcHours(shift.startTime, shift.endTime);
 
   const handleDragStart = (e: React.DragEvent) => {
@@ -42,12 +45,12 @@ export default function ShiftBlock({
       draggable={draggable}
       onDragStart={handleDragStart}
       onDragEnd={() => setIsDragging(false)}
-      className={`group relative rounded-md text-white cursor-pointer transition-all hover:brightness-110 hover:shadow-sm ${
+      className={`group relative rounded-md border-l-[3px] cursor-pointer transition-all hover:brightness-[0.97] hover:shadow-sm ${
         isDragging ? 'opacity-40' : ''
       } ${compact ? 'px-2.5 py-2 min-h-[36px]' : 'px-2.5 py-2.5 min-h-[44px]'} ${
-        conflict ? 'ring-2 ring-[var(--color-accent)] ring-offset-1 ring-offset-white' : ''
+        conflict ? 'ring-2 ring-[var(--color-negative)] ring-offset-1 ring-offset-white' : ''
       }`}
-      style={{ backgroundColor: bg }}
+      style={{ backgroundColor: tint, color: anchor, borderLeftColor: anchor }}
       onClick={() => onEdit(shift.id)}
       title={conflict ? 'This shift overlaps with another shift for this employee' : undefined}
     >
@@ -57,29 +60,29 @@ export default function ShiftBlock({
           {compact ? (
             <>
               <div className="font-mono font-semibold text-[12.5px] leading-tight flex items-center gap-1">
-                {conflict && <span aria-label="Conflict">&#9888;</span>}
+                {conflict && <span aria-label="Conflict" style={{ color: 'var(--color-negative)' }}>&#9888;</span>}
                 <span className="truncate">{formatTime(shift.startTime)} – {formatTime(shift.endTime)}</span>
               </div>
               {shift.note && (
-                <div className="text-[10.5px] text-white/60 mt-0.5 truncate">{shift.note}</div>
+                <div className="text-[10.5px] text-[var(--color-muted)] mt-0.5 truncate">{shift.note}</div>
               )}
             </>
           ) : (
             <>
-              <div className="truncate font-medium text-[13px] flex items-center gap-1">
-                {conflict && <span aria-label="Conflict">&#9888;</span>}
+              <div className="truncate font-semibold text-[13px] flex items-center gap-1">
+                {conflict && <span aria-label="Conflict" style={{ color: 'var(--color-negative)' }}>&#9888;</span>}
                 <span className="truncate">{showEmployeeName && employee ? employee.name : (shift.note || employee?.name.split(' ')[0] || 'Shift')}</span>
               </div>
-              <div className="font-mono text-white/70 text-[11px] mt-0.5 flex items-center gap-1.5">
+              <div className="font-mono text-[11px] mt-0.5 flex items-center gap-1.5 text-[var(--color-muted)]">
                 <span>{formatTime(shift.startTime)} – {formatTime(shift.endTime)}</span>
-                <span className="text-white/50">·</span>
-                <span className="text-white/50">{hours}h</span>
+                <span>·</span>
+                <span>{hours}h</span>
               </div>
             </>
           )}
         </div>
         <button
-          className="text-white/40 hover:text-white text-base leading-none opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0 -mr-1 -mt-0.5 p-0.5"
+          className="text-[var(--color-muted)] hover:text-[var(--color-negative)] text-base leading-none opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0 -mr-1 -mt-0.5 p-0.5"
           onClick={(e) => { e.stopPropagation(); onDelete(shift.id); }}
           aria-label="Delete shift"
         >

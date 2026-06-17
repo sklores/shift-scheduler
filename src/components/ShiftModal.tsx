@@ -161,7 +161,7 @@ export default function ShiftModal({ isOpen, onClose, editShiftId, prefillEmpId,
                   setMarkingUnavailable(false);
                 }
               }}
-              className="text-[13px] font-medium px-4 py-2 rounded-lg bg-[#1F1B16] text-white border border-[#1F1B16] hover:opacity-80 transition-all disabled:opacity-50 flex items-center gap-1.5"
+              className="text-[13px] font-medium px-4 py-2 rounded-lg bg-[var(--color-text)] text-white border border-[var(--color-text)] hover:opacity-80 transition-all disabled:opacity-50 flex items-center gap-1.5"
             >
               {markingUnavailable && (
                 <span className="inline-block w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" />

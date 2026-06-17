@@ -313,7 +313,7 @@ function DesktopGrid({ onAddShift, onEditShift, onDeleteShift, toastTips, tipsLo
                     key={cellKey}
                     ref={(el) => { if (el) cellRefs.current.set(refKey, el); else cellRefs.current.delete(refKey); }}
                     className={`group/cell border-r border-b border-[var(--color-border)] last:border-r-0 p-1.5 transition-colors overflow-hidden relative flex flex-col justify-center ${
-                      isAlt ? 'bg-[#fafaf7]' : 'bg-[var(--color-surface)]'
+                      isAlt ? 'bg-[#f1f6f5]' : 'bg-[var(--color-surface)]'
                     } ${isDragOver ? 'drag-over' : ''} ${isFocused ? 'kbd-focused' : ''}`}
                     onClick={(e) => {
                       const target = e.target as HTMLElement;
@@ -350,7 +350,7 @@ function DesktopGrid({ onAddShift, onEditShift, onDeleteShift, toastTips, tipsLo
                   >
                     {blocked && blockRecord ? (
                       <div className="group/block relative flex flex-col gap-1">
-                        <div className="w-full rounded-md bg-[#1F1B16] text-white text-[10.5px] font-semibold text-center py-1.5 px-2 flex items-center justify-between gap-1 cursor-pointer select-none" title="Click × to remove">
+                        <div className="w-full rounded-md bg-[var(--color-text)] text-white text-[10.5px] font-semibold text-center py-1.5 px-2 flex items-center justify-between gap-1 cursor-pointer select-none" title="Click × to remove">
                           <span className="flex-1 text-center uppercase tracking-wide">Unavailable</span>
                           <button
                             onClick={(e) => { e.stopPropagation(); removeAvailabilityBlock(blockRecord.id); }}
