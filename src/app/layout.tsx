@@ -1,17 +1,14 @@
 import type { Metadata, Viewport } from "next";
-import { IBM_Plex_Sans, IBM_Plex_Mono } from "next/font/google";
+import { Manrope } from "next/font/google";
 import "./globals.css";
 
-const plexSans = IBM_Plex_Sans({
+// Single font per the & done brief. Exposed as --font-sans; globals.css
+// aliases --font-mono to the same family so existing markup keeps working.
+const manrope = Manrope({
   variable: "--font-sans",
   subsets: ["latin"],
-  weight: ["300", "400", "500", "600"],
-});
-
-const plexMono = IBM_Plex_Mono({
-  variable: "--font-mono",
-  subsets: ["latin"],
-  weight: ["400", "500", "600"],
+  weight: ["400", "500", "600", "700"],
+  display: "swap",
 });
 
 export const metadata: Metadata = {
@@ -36,7 +33,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#1f1b16",
+  themeColor: "#2c3a35",
 };
 
 export default function RootLayout({
@@ -45,8 +42,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${plexSans.variable} ${plexMono.variable} h-full`}>
-      <body className="min-h-full flex flex-col font-sans bg-[#f5f3ee] text-[#1a1916] antialiased">
+    <html lang="en" className={`${manrope.variable} h-full`}>
+      <body className="min-h-full flex flex-col font-sans bg-[#e4eded] text-[#2c3a35] antialiased">
         {children}
       </body>
     </html>

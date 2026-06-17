@@ -233,7 +233,7 @@ function Stat({ label, value, accent = false, fill = false }: { label: string; v
 function CostStat({ labor, fill = false }: { labor: number; fill?: boolean }) {
   return (
     <div className={`px-3 py-1.5 rounded-lg bg-[var(--color-surface-2)] ${fill ? 'flex-1' : ''}`}>
-      <div className="font-mono text-[16px] font-semibold leading-tight text-[var(--color-accent)]">
+      <div className="font-mono text-[16px] font-semibold leading-tight text-[var(--color-text)]">
         {formatCurrency(labor)}
       </div>
       <div className="text-[11px] text-[var(--color-muted)] mt-0.5 whitespace-nowrap">

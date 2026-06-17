@@ -1,33 +1,43 @@
 @import "tailwindcss";
 
 @theme inline {
-  --font-sans: var(--font-sans), "IBM Plex Sans", system-ui, sans-serif;
-  --font-mono: var(--font-mono), "IBM Plex Mono", ui-monospace, monospace;
+  /* Manrope across the board — --font-mono kept as an alias so existing
+     `font-mono` usages render Manrope too (single-font per & done brief). */
+  --font-sans: var(--font-sans), "Manrope", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-sans), "Manrope", ui-sans-serif, system-ui, sans-serif;
 
-  /* Core palette — warmer, more refined */
-  --color-bg: #faf8f3;
+  /* Core palette — & done desktop: pale desaturated teal-gray, white cards */
+  --color-bg: #e4eded;
   --color-surface: #ffffff;
-  --color-surface-2: #f5f2eb;
-  --color-border: #e8e3d8;
-  --color-border-strong: #d4cfc2;
+  --color-surface-2: #eef3f3;
+  --color-border: #d1dcdb;
+  --color-border-strong: #b9c8c6;
 
-  /* Text */
-  --color-text: #1f1b16;
-  --color-text-2: #4a453c;
-  --color-muted: #8a8478;
+  /* Text — near-black forest green */
+  --color-text: #2c3a35;
+  --color-text-2: #56655f;
+  --color-muted: #8a9c9c;
 
-  /* Brand accent — deeper, more sophisticated rust/amber */
-  --color-accent: #b84a2f;
-  --color-accent-hover: #9e3e27;
-  --color-accent-light: #fbe9e0;
-  --color-accent-subtle: #fdf4ef;
+  /* Primary action = ink (forest green); also recolors the header bar.
+     Teal is the SPARSE accent, exposed separately as --color-teal. */
+  --color-accent: #2c3a35;
+  --color-accent-hover: #1f2a26;
+  --color-accent-light: #e7efeb;
+  --color-accent-subtle: #eef4f1;
 
-  /* Success / publish */
-  --color-green: #2e6938;
-  --color-green-hover: #275a30;
-  --color-green-light: #e9f2ea;
+  /* Brand teal — sparse highlights / pills only */
+  --color-teal: #7bbfaa;
+  --color-teal-subtle: #e8f3ef;
 
-  /* Warning */
+  /* Success / publish + positive deltas */
+  --color-green: #2f8f6a;
+  --color-green-hover: #277a59;
+  --color-green-light: #e6f2ec;
+
+  /* Negative deltas */
+  --color-negative: #b54546;
+
+  /* Warning — amber, the one borrowed color */
   --color-warn: #a86615;
   --color-warn-light: #fdf2e0;
 
@@ -54,9 +64,16 @@ body {
 
 body {
   font-size: 14px;
-  font-feature-settings: "cv11", "ss01";
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+/* Single-font brief: all numeric/figure text uses tabular figures so
+   columns of times and dollar amounts line up. `font-mono` is the marker
+   the app already puts on every number, now rendering Manrope tnum. */
+.font-mono {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
 }
 
 ::-webkit-scrollbar {
@@ -69,12 +86,12 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #d4cfc2;
+  background: #c2d0ce;
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #b8b3a5;
+  background: #a6b8b5;
 }
 
 /* Animations */

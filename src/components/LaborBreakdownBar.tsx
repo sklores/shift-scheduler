@@ -108,9 +108,9 @@ function Card({
   label: string; value: string; sublabel?: string; big?: boolean; warn?: boolean;
 }) {
   return (
-    <div className={`${big ? 'min-w-[200px] bg-[var(--color-accent-subtle)] border-[var(--color-accent)]/20' : 'min-w-[140px] bg-[var(--color-surface-2)] border-[var(--color-border)]'} border rounded-lg px-4 py-3 flex-shrink-0 flex flex-col justify-between`}>
+    <div className={`${big ? 'min-w-[200px] bg-[var(--color-teal-subtle)] border-[var(--color-teal)]/40' : 'min-w-[140px] bg-[var(--color-surface-2)] border-[var(--color-border)]'} border rounded-lg px-4 py-3 flex-shrink-0 flex flex-col justify-between`}>
       <div className={`text-[11px] font-medium ${warn ? 'text-[var(--color-warn)]' : 'text-[var(--color-muted)]'}`}>{label}</div>
-      <div className={`font-mono font-semibold leading-tight mt-1.5 ${big ? 'text-[28px] text-[var(--color-accent)]' : 'text-[20px] text-[var(--color-text)]'}`}>{value}</div>
+      <div className={`font-mono font-semibold leading-tight mt-1.5 ${big ? 'text-[28px] text-[var(--color-text)]' : 'text-[20px] text-[var(--color-text)]'}`}>{value}</div>
       {sublabel && <div className="text-[11px] text-[var(--color-muted)] mt-1 whitespace-nowrap">{sublabel}</div>}
     </div>
   );
