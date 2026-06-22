@@ -50,7 +50,7 @@ export default function ShiftBlock({
       } ${compact ? 'px-2.5 py-2 min-h-[36px]' : 'px-2.5 py-2.5 min-h-[44px]'} ${
         conflict ? 'ring-2 ring-[var(--color-negative)] ring-offset-1 ring-offset-white' : ''
       }`}
-      style={{ backgroundColor: tint, color: anchor, borderLeftColor: anchor }}
+      style={{ backgroundColor: tint, color: 'var(--color-text)', borderLeftColor: anchor }}
       onClick={() => onEdit(shift.id)}
       title={conflict ? 'This shift overlaps with another shift for this employee' : undefined}
     >
