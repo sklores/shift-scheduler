@@ -57,8 +57,16 @@ async function fetchDayTips(headers: Record<string, string>, businessDate: strin
     }
 
     for (const order of orders) {
-      for (const check of (order as { checks?: { payments?: { tipAmount?: number }[] }[] }).checks ?? []) {
+      const o = order as { voided?: boolean; deleted?: boolean; checks?: { voided?: boolean; deleted?: boolean; payments?: { tipAmount?: number; paymentStatus?: string }[] }[] };
+      if (o.voided || o.deleted) continue;
+      for (const check of o.checks ?? []) {
+        if (check.voided || check.deleted) continue;
         for (const payment of check.payments ?? []) {
+          // Only count settled tips. Toast's own tips report counts CAPTURED
+          // payments only — VOIDED / CANCELLED / PROCESSING_VOID / DENIED
+          // payments still carry a tipAmount but were never collected.
+          // (Confirmed: including them over-reported a week by $16.93.)
+          if (payment.paymentStatus !== 'CAPTURED') continue;
           const t = payment.tipAmount;
           if (typeof t === 'number' && t > 0) tips += t;
         }
