@@ -197,9 +197,9 @@ function ToastTipsCard({
         {error ? (
           <span className="text-[var(--color-warn)]" title={error}>Toast unavailable</span>
         ) : fetchedTime ? (
-          `Updated ${fetchedTime} · taxed`
+          `Raw tips · updated ${fetchedTime}`
         ) : (
-          'Included in taxable base'
+          'Raw tips from Toast'
         )}
       </div>
 
