@@ -15,12 +15,17 @@ export function getSupabase(): SupabaseClient {
       'Missing NEXT_PUBLIC_SUPABASE_URL / NEXT_PUBLIC_SUPABASE_ANON_KEY. Check Vercel env vars.'
     );
   }
+  // Storage key is scoped to the Supabase project so a session from a
+  // previous backend is never replayed against the current one (a stale
+  // foreign JWT makes every query fail with "No suitable key or wrong
+  // key type" while the login gate stays hidden).
+  const projectRef = new URL(url).hostname.split('.')[0];
   _client = createClient(url, anonKey, {
     auth: {
       persistSession: true,
       autoRefreshToken: true,
       detectSessionInUrl: false,
-      storageKey: 'shift-auth',
+      storageKey: `shift-auth-${projectRef}`,
     },
   });
   return _client;
