@@ -18,6 +18,10 @@ const REPORT_RECIPIENTS = (Deno.env.get("REPORT_RECIPIENTS") || "")
   .split(",").map(s => s.trim()).filter(Boolean);
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+// Org scope: required on the multi-tenant DashVue core (service role reads
+// bypass RLS, so an unfiltered query would leak other restaurants' shifts).
+// Unset → original single-tenant DB behavior.
+const ORG_ID = Deno.env.get("ORG_ID") || "";
 
 // Role colors — match app exactly
 const ROLE_COLORS: Record<string, string> = {
@@ -125,13 +129,18 @@ Deno.serve(async (_req) => {
     const { start, end, mon, sun } = nextWeekRange();
     const wkLabel = weekLabel(mon, sun);
 
+    let shiftsQuery = sb.from("shift_shifts")
+      .select("id,employee_id,shift_date,start_time,end_time,note")
+      .gte("shift_date", start).lte("shift_date", end)
+      .order("shift_date").order("start_time");
+    let empsQuery = sb.from("shift_employees").select("id,name,role");
+    if (ORG_ID) {
+      shiftsQuery = shiftsQuery.eq("org_id", ORG_ID);
+      empsQuery = empsQuery.eq("org_id", ORG_ID);
+    }
     const [{ data: shifts, error: shErr }, { data: emps, error: eErr }] = await Promise.all([
-      sb.from("shift_shifts")
-        .select("id,employee_id,shift_date,start_time,end_time,note")
-        .gte("shift_date", start).lte("shift_date", end)
-        .order("shift_date").order("start_time"),
-      sb.from("shift_employees")
-        .select("id,name,role"),
+      shiftsQuery,
+      empsQuery,
     ]);
     if (shErr) throw new Error(`fetch shifts: ${shErr.message}`);
     if (eErr) throw new Error(`fetch employees: ${eErr.message}`);

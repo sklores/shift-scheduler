@@ -1,6 +1,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { DataAdapter } from './adapter';
 import type { AvailabilityBlock, Employee, EmployeeRole, Shift, Template, TemplateItem } from './types';
+import { withOrg } from './org';
 
 // Row shapes (snake_case in Supabase)
 interface EmployeeRow {
@@ -105,7 +106,7 @@ export class SupabaseAdapter implements DataAdapter {
   async addEmployee(emp: Omit<Employee, 'id'>): Promise<Employee> {
     const { data, error } = await this.supabase
       .from('shift_employees')
-      .insert({
+      .insert(withOrg({
         name: emp.name,
         role: emp.role,
         hourly_rate: emp.hourlyRate,
@@ -114,7 +115,7 @@ export class SupabaseAdapter implements DataAdapter {
         color: emp.color,
         employee_code: emp.employeeCode ?? null,
         is_active: emp.isActive,
-      })
+      }))
       .select()
       .single();
     if (error) throw new Error(`addEmployee: ${error.message}`);
@@ -177,13 +178,13 @@ export class SupabaseAdapter implements DataAdapter {
   async addShift(shift: Omit<Shift, 'id'>): Promise<Shift> {
     const { data, error } = await this.supabase
       .from('shift_shifts')
-      .insert({
+      .insert(withOrg({
         employee_id: shift.employeeId,
         shift_date: shift.date,
         start_time: shift.startTime,
         end_time: shift.endTime,
         note: shift.note,
-      })
+      }))
       .select()
       .single();
     if (error) throw new Error(`addShift: ${error.message}`);
@@ -249,10 +250,10 @@ export class SupabaseAdapter implements DataAdapter {
   async saveTemplate(template: Omit<Template, 'id'>): Promise<Template> {
     const { data, error } = await this.supabase
       .from('shift_templates')
-      .insert({
+      .insert(withOrg({
         name: template.name,
         source_week_start: template.sourceWeekStart || null,
-      })
+      }))
       .select()
       .single();
     if (error) throw new Error(`saveTemplate: ${error.message}`);
@@ -262,7 +263,7 @@ export class SupabaseAdapter implements DataAdapter {
       const { error: itemsErr } = await this.supabase
         .from('shift_template_items')
         .insert(
-          template.items.map((it: TemplateItem) => ({
+          template.items.map((it: TemplateItem) => withOrg({
             template_id: tmpl.id,
             employee_id: it.employeeId || null,
             day_of_week: it.dayIndex,
@@ -329,12 +330,12 @@ export class SupabaseAdapter implements DataAdapter {
   async addAvailabilityBlock(block: Omit<AvailabilityBlock, 'id'>): Promise<AvailabilityBlock> {
     const { data, error } = await this.supabase
       .from('shift_availability_blocks')
-      .insert({
+      .insert(withOrg({
         employee_id: block.employeeId,
         starts_on: block.startsOn,
         ends_on: block.endsOn,
         reason: block.reason ?? '',
-      })
+      }))
       .select()
       .single();
     if (error) throw new Error(`addAvailabilityBlock: ${error.message}`);
