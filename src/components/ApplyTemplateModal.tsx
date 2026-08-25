@@ -46,13 +46,13 @@ export default function ApplyTemplateModal({ isOpen, onClose, onToast }: ApplyTe
       width="max-w-sm"
       footer={
         <>
-          <button onClick={onClose} className="text-[13px] font-medium px-4 py-2 rounded-lg bg-white text-[var(--color-text-2)] border border-[var(--color-border-strong)] hover:bg-[var(--color-bg)] transition-all">
+          <button onClick={onClose} className="text-[13px] font-medium px-4 py-2 rounded-lg bg-[var(--color-surface)] text-[var(--color-muted)] border border-[var(--color-border)] hover:bg-[var(--color-rowhover)] transition-all">
             Cancel
           </button>
           <button
             onClick={handleApply}
             disabled={!selectedId || templates.length === 0}
-            className="text-[13px] font-medium px-4 py-2 rounded-lg bg-[var(--color-accent)] text-white border border-[var(--color-accent)] hover:bg-[var(--color-accent-hover)] transition-all disabled:opacity-40 disabled:cursor-not-allowed shadow-sm"
+            className="text-[13px] font-medium px-4 py-2 rounded-lg bg-[var(--color-accent-dark)] text-white hover:bg-[var(--color-accent-hover)] transition-all disabled:opacity-40 disabled:cursor-not-allowed shadow-sm"
           >
             Apply to This Week
           </button>
@@ -101,7 +101,7 @@ export default function ApplyTemplateModal({ isOpen, onClose, onToast }: ApplyTe
           </div>
 
           {selected && (
-            <div className="mt-3 p-3 bg-[var(--color-surface-2)] rounded-md text-[12px] text-[var(--color-text-2)] leading-relaxed">
+            <div className="mt-3 p-3 bg-[var(--color-surface-2)] rounded-lg text-[12px] text-[var(--color-text-2)] leading-relaxed">
               Adds {selected.items.length} shift{selected.items.length !== 1 ? 's' : ''} to this week. Existing shifts are kept; duplicates are skipped.
             </div>
           )}

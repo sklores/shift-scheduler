@@ -55,13 +55,13 @@ export default function StaffItem({ employee, onRemove, onToast }: StaffItemProp
             <input
               autoFocus
               type="text"
-              className="flex-1 min-w-0 border border-[var(--color-accent)] rounded-md px-2 py-1 text-[13px] bg-white text-[var(--color-text)] outline-none"
+              className="flex-1 min-w-0 border border-[var(--color-accent)] rounded-lg px-2 py-1 text-[13px] bg-white text-[var(--color-text)] outline-none"
               value={editName}
               onChange={(e) => setEditName(e.target.value)}
               onKeyDown={(e) => { if (e.key === 'Enter') handleEditSave(); if (e.key === 'Escape') handleEditCancel(); }}
             />
             <select
-              className="border border-[var(--color-border-strong)] rounded-md px-2 py-1 text-[12px] bg-white text-[var(--color-text)] outline-none focus:border-[var(--color-accent)]"
+              className="border border-[var(--color-border-strong)] rounded-lg px-2 py-1 text-[12px] bg-white text-[var(--color-text)] outline-none focus:border-[var(--color-accent)]"
               value={editRole}
               onChange={(e) => setEditRole(e.target.value as EmployeeRole)}
             >
@@ -84,13 +84,13 @@ export default function StaffItem({ employee, onRemove, onToast }: StaffItemProp
           <div className="flex gap-1.5 flex-shrink-0">
             <button
               onClick={handleEditSave}
-              className="text-[12px] font-semibold px-3 py-1 rounded-md bg-[var(--color-accent)] text-white hover:bg-[var(--color-accent-hover)] transition-all"
+              className="text-[12px] font-semibold px-3 py-1 rounded-lg bg-[var(--color-accent)] text-white hover:bg-[var(--color-accent-hover)] transition-all"
             >
               Save
             </button>
             <button
               onClick={handleEditCancel}
-              className="text-[12px] font-medium px-3 py-1 rounded-md bg-[var(--color-surface-2)] text-[var(--color-muted)] border border-[var(--color-border-strong)] hover:bg-[var(--color-bg)] transition-all"
+              className="text-[12px] font-medium px-3 py-1 rounded-lg bg-[var(--color-surface-2)] text-[var(--color-muted)] border border-[var(--color-border-strong)] hover:bg-[var(--color-bg)] transition-all"
             >
               Cancel
             </button>
@@ -102,7 +102,7 @@ export default function StaffItem({ employee, onRemove, onToast }: StaffItemProp
               <span className="font-mono text-[11px] text-[var(--color-muted)]">$</span>
               <input
                 type="number"
-                className="w-14 border border-[var(--color-border-strong)] rounded-md px-2 py-1.5 font-mono text-[13px] bg-white text-[var(--color-text)] focus:border-[var(--color-accent)] outline-none"
+                className="w-14 border border-[var(--color-border-strong)] rounded-lg px-2 py-1.5 font-mono text-[13px] bg-white text-[var(--color-text)] focus:border-[var(--color-accent)] outline-none"
                 value={employee.hourlyRate}
                 min={0}
                 step={0.5}
@@ -127,7 +127,7 @@ export default function StaffItem({ employee, onRemove, onToast }: StaffItemProp
             {/* Edit button */}
             <button
               onClick={() => { setEditName(employee.name); setEditRole(employee.role); setEditing(true); }}
-              className="text-[var(--color-muted)] hover:text-[var(--color-accent)] w-7 h-7 rounded-md hover:bg-[var(--color-accent-subtle)] flex items-center justify-center transition-all flex-shrink-0"
+              className="text-[var(--color-muted)] hover:text-[var(--color-accent)] w-7 h-7 rounded-lg hover:bg-[var(--color-accent-subtle)] flex items-center justify-center transition-all flex-shrink-0"
               aria-label="Edit"
             >
               <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M9 1.5L11.5 4L4.5 11H2V8.5L9 1.5Z" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round"/></svg>
@@ -135,7 +135,7 @@ export default function StaffItem({ employee, onRemove, onToast }: StaffItemProp
 
             <button
               onClick={() => onRemove(employee.id)}
-              className="text-[var(--color-muted)] hover:text-[var(--color-accent)] w-7 h-7 rounded-md hover:bg-[var(--color-accent-subtle)] flex items-center justify-center text-lg leading-none transition-all flex-shrink-0"
+              className="text-[var(--color-muted)] hover:text-[var(--color-accent)] w-7 h-7 rounded-lg hover:bg-[var(--color-accent-subtle)] flex items-center justify-center text-lg leading-none transition-all flex-shrink-0"
               aria-label="Remove"
             >
               &times;
@@ -149,7 +149,7 @@ export default function StaffItem({ employee, onRemove, onToast }: StaffItemProp
         <svg width="13" height="13" viewBox="0 0 13 13" fill="none" className="text-[var(--color-muted)] flex-shrink-0"><path d="M2 3.5C2 2.67 2.67 2 3.5 2H4L5.5 5L4 6C4.5 7.5 5.5 8.5 7 9L8 7.5L11 9V9.5C11 10.33 10.33 11 9.5 11C5.91 11 2 7.09 2 3.5Z" stroke="currentColor" strokeWidth="1.2" strokeLinejoin="round"/></svg>
         <input
           type="tel"
-          className="flex-1 border border-[var(--color-border)] rounded-md px-3 py-1.5 font-mono text-[12px] bg-transparent text-[var(--color-text)] focus:border-[var(--color-green)] focus:bg-white outline-none transition-all"
+          className="flex-1 border border-[var(--color-border)] rounded-lg px-3 py-1.5 font-mono text-[12px] bg-transparent text-[var(--color-text)] focus:border-[var(--color-green)] focus:bg-white outline-none transition-all"
           placeholder="+1 555 000 0000"
           value={employee.phone}
           onChange={(e) => updateEmployee(employee.id, { phone: e.target.value })}
@@ -164,7 +164,7 @@ export default function StaffItem({ employee, onRemove, onToast }: StaffItemProp
         <svg width="13" height="13" viewBox="0 0 13 13" fill="none" className="text-[var(--color-muted)] flex-shrink-0"><rect x="1.5" y="3" width="10" height="7" rx="1" stroke="currentColor" strokeWidth="1.2"/><path d="M1.5 4.5L6.5 7.5L11.5 4.5" stroke="currentColor" strokeWidth="1.2" strokeLinejoin="round"/></svg>
         <input
           type="email"
-          className="flex-1 border border-[var(--color-border)] rounded-md px-3 py-1.5 font-mono text-[12px] bg-transparent text-[var(--color-text)] focus:border-[var(--color-green)] focus:bg-white outline-none transition-all"
+          className="flex-1 border border-[var(--color-border)] rounded-lg px-3 py-1.5 font-mono text-[12px] bg-transparent text-[var(--color-text)] focus:border-[var(--color-green)] focus:bg-white outline-none transition-all"
           placeholder="employee@email.com"
           value={employee.email ?? ''}
           onChange={(e) => updateEmployee(employee.id, { email: e.target.value })}

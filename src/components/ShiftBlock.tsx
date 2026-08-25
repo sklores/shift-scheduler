@@ -45,7 +45,7 @@ export default function ShiftBlock({
       draggable={draggable}
       onDragStart={handleDragStart}
       onDragEnd={() => setIsDragging(false)}
-      className={`group relative rounded-md border-l-[3px] cursor-pointer transition-all hover:brightness-[0.97] hover:shadow-sm ${
+      className={`group relative rounded-lg border-l-[3px] cursor-pointer transition-all hover:brightness-[0.97] hover:shadow-sm ${
         isDragging ? 'opacity-40' : ''
       } ${compact ? 'px-2.5 py-2 min-h-[36px]' : 'px-2.5 py-2.5 min-h-[44px]'} ${
         conflict ? 'ring-2 ring-[var(--color-negative)] ring-offset-1 ring-offset-white' : ''

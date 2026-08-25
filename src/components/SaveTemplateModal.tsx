@@ -47,7 +47,7 @@ export default function SaveTemplateModal({ isOpen, onClose, onToast }: SaveTemp
     onClose();
   };
 
-  const inputCls = "w-full border border-[var(--color-border-strong)] rounded-md px-3 py-2 text-[13px] bg-white text-[var(--color-text)] focus:border-[var(--color-accent)] outline-none transition-colors";
+  const inputCls = "w-full border border-[var(--color-border-strong)] rounded-lg px-3 py-2 text-[13px] bg-white text-[var(--color-text)] focus:border-[var(--color-accent)] outline-none transition-colors";
   const labelCls = "block text-[10px] font-semibold uppercase tracking-wider text-[var(--color-muted)] mb-1.5 font-mono";
 
   return (
@@ -60,7 +60,7 @@ export default function SaveTemplateModal({ isOpen, onClose, onToast }: SaveTemp
         <div className="flex w-full items-center justify-end gap-2.5">
           <button
             onClick={onClose}
-            className="text-[13px] font-medium px-4 py-2 rounded-lg bg-white text-[var(--color-text-2)] border border-[var(--color-border-strong)] hover:bg-[var(--color-bg)] transition-all"
+            className="text-[13px] font-medium px-4 py-2 rounded-lg bg-[var(--color-surface)] text-[var(--color-muted)] border border-[var(--color-border)] hover:bg-[var(--color-rowhover)] transition-all"
           >
             Cancel
           </button>
@@ -68,7 +68,7 @@ export default function SaveTemplateModal({ isOpen, onClose, onToast }: SaveTemp
             <button
               onClick={handleSaveNew}
               disabled={!name.trim() || currentWeekShifts.length === 0}
-              className="text-[13px] font-medium px-4 py-2 rounded-lg bg-[var(--color-accent)] text-white border border-[var(--color-accent)] hover:bg-[var(--color-accent-hover)] transition-all shadow-sm disabled:opacity-40 disabled:cursor-not-allowed"
+              className="text-[13px] font-medium px-4 py-2 rounded-lg bg-[var(--color-accent-dark)] text-white hover:bg-[var(--color-accent-hover)] transition-all shadow-sm disabled:opacity-40 disabled:cursor-not-allowed"
             >
               Save Template
             </button>
@@ -93,7 +93,7 @@ export default function SaveTemplateModal({ isOpen, onClose, onToast }: SaveTemp
               <button
                 onClick={handleOverwrite}
                 disabled={overwriting || currentWeekShifts.length === 0}
-                className="flex-shrink-0 text-[13px] font-medium px-3.5 py-2 rounded-lg bg-[var(--color-accent)] text-white border border-[var(--color-accent)] hover:bg-[var(--color-accent-hover)] transition-all shadow-sm disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1.5"
+                className="flex-shrink-0 text-[13px] font-medium px-3.5 py-2 rounded-lg bg-[var(--color-accent-dark)] text-white hover:bg-[var(--color-accent-hover)] transition-all shadow-sm disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1.5"
               >
                 {overwriting && (
                   <span className="inline-block w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" />
@@ -129,7 +129,7 @@ export default function SaveTemplateModal({ isOpen, onClose, onToast }: SaveTemp
               <button
                 onClick={handleSaveNew}
                 disabled={!name.trim() || currentWeekShifts.length === 0}
-                className="text-[13px] font-medium px-3.5 py-2 rounded-lg bg-white text-[var(--color-text-2)] border border-[var(--color-border-strong)] hover:bg-[var(--color-bg)] hover:text-[var(--color-text)] transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                className="text-[13px] font-medium px-3.5 py-2 rounded-lg bg-[var(--color-surface)] text-[var(--color-muted)] border border-[var(--color-border)] hover:bg-[var(--color-rowhover)] hover:text-[var(--color-text)] transition-all disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 Save New
               </button>

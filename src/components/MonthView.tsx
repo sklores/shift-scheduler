@@ -83,12 +83,12 @@ export default function MonthView({ onJumpToWeek }: MonthViewProps) {
       {/* ── Nav bar ── */}
       <div className="month-nav px-4 sm:px-6 py-3 border-b border-[var(--color-border)] bg-[var(--color-surface)] flex items-center gap-2 flex-shrink-0">
         <button onClick={() => setMonthOffset(o => o - 1)}
-          className="w-7 h-7 rounded-md text-[var(--color-text-2)] hover:text-[var(--color-text)] hover:bg-[var(--color-surface-2)] transition-all flex items-center justify-center flex-shrink-0">
+          className="w-7 h-7 rounded-lg text-[var(--color-text-2)] hover:text-[var(--color-text)] hover:bg-[var(--color-surface-2)] transition-all flex items-center justify-center flex-shrink-0">
           <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M9 3L5 7L9 11" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
         </button>
         <span className="font-mono text-[14px] font-semibold text-[var(--color-text)] w-40 text-center select-none">{monthLabel}</span>
         <button onClick={() => setMonthOffset(o => o + 1)}
-          className="w-7 h-7 rounded-md text-[var(--color-text-2)] hover:text-[var(--color-text)] hover:bg-[var(--color-surface-2)] transition-all flex items-center justify-center flex-shrink-0">
+          className="w-7 h-7 rounded-lg text-[var(--color-text-2)] hover:text-[var(--color-text)] hover:bg-[var(--color-surface-2)] transition-all flex items-center justify-center flex-shrink-0">
           <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M5 3L9 7L5 11" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
         </button>
         {monthOffset !== 0 && (
@@ -103,7 +103,7 @@ export default function MonthView({ onJumpToWeek }: MonthViewProps) {
           <span className="text-[11px] opacity-50 hidden lg:inline">Click a block to open that week</span>
           <button
             onClick={() => window.print()}
-            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-[var(--color-text-2)] hover:text-[var(--color-text)] hover:bg-[var(--color-surface-2)] transition-all text-[12px] font-medium border border-[var(--color-border-strong)]"
+            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[var(--color-text-2)] hover:text-[var(--color-text)] hover:bg-[var(--color-surface-2)] transition-all text-[12px] font-medium border border-[var(--color-border-strong)]"
           >
             <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M3 4V2H10V4" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/><rect x="1" y="4" width="11" height="6" rx="1.5" stroke="currentColor" strokeWidth="1.3"/><path d="M3 10V11H10V10" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/><circle cx="9.5" cy="7" r="0.75" fill="currentColor"/></svg>
             <span className="hidden sm:inline">Print</span>

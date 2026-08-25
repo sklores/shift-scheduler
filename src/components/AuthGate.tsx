@@ -74,7 +74,7 @@ export default function AuthGate() {
         <button
           type="submit"
           disabled={loading || !password}
-          className="w-full text-[13px] font-semibold px-4 py-2.5 rounded-lg bg-[var(--color-accent)] text-white border border-[var(--color-accent)] hover:bg-[var(--color-accent-hover)] transition-all disabled:opacity-40 disabled:cursor-not-allowed shadow-sm"
+          className="w-full text-[13px] font-semibold px-4 py-2.5 rounded-lg bg-[var(--color-accent-dark)] text-white hover:bg-[var(--color-accent-hover)] transition-all disabled:opacity-40 disabled:cursor-not-allowed shadow-sm"
         >
           {loading ? 'Signing in…' : `Enter as ${role === 'owner' ? 'Owner' : 'Employee'}`}
         </button>

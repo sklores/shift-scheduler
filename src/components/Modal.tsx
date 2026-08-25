@@ -39,12 +39,12 @@ export default function Modal({ isOpen, onClose, title, headerClassName, footer,
       className="fixed inset-0 z-[400] flex items-end sm:items-center justify-center bg-black/50 animate-[fadeIn_0.15s_ease] p-0 sm:p-4"
       onClick={(e) => { if (e.target === overlayRef.current) onClose(); }}
     >
-      <div className={`bg-white rounded-t-2xl sm:rounded-xl shadow-2xl overflow-hidden w-full ${width} animate-[scaleIn_0.2s_ease] max-h-[90vh] flex flex-col`}>
-        <div className={`px-5 py-4 flex items-center justify-between flex-shrink-0 ${headerClassName ?? 'bg-[var(--color-text)] text-white'}`}>
-          <h2 className="font-semibold text-[15px]">{title}</h2>
+      <div className={`bg-[var(--color-surface)] rounded-t-2xl sm:rounded-2xl shadow-sm overflow-hidden w-full ${width} animate-[scaleIn_0.2s_ease] max-h-[90vh] flex flex-col`}>
+        <div className={`px-5 py-4 flex items-center justify-between flex-shrink-0 border-b border-[var(--color-border)] ${headerClassName ?? 'bg-[var(--color-surface)] text-[var(--color-text)]'}`}>
+          <h2 className="font-extrabold text-[15px]">{title}</h2>
           <button
             onClick={onClose}
-            className="text-white/60 hover:text-white text-2xl leading-none w-8 h-8 flex items-center justify-center rounded-md hover:bg-white/10 transition-colors"
+            className="text-[var(--color-faint)] hover:text-[var(--color-text)] text-2xl leading-none w-8 h-8 flex items-center justify-center rounded-lg hover:bg-[var(--color-rowhover)] transition-colors"
             aria-label="Close"
           >
             &times;

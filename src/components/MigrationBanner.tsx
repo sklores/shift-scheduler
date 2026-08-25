@@ -62,14 +62,14 @@ export default function MigrationBanner() {
           <button
             onClick={handleSkip}
             disabled={busy}
-            className="text-[13px] font-medium px-3 py-1.5 rounded-md bg-transparent text-[var(--color-text-2)] border border-[var(--color-border-strong)] hover:bg-white transition-all"
+            className="text-[13px] font-medium px-3 py-1.5 rounded-lg bg-transparent text-[var(--color-text-2)] border border-[var(--color-border-strong)] hover:bg-white transition-all"
           >
             Skip
           </button>
           <button
             onClick={handleImport}
             disabled={busy}
-            className="text-[13px] font-medium px-4 py-1.5 rounded-md bg-[var(--color-accent)] text-white hover:bg-[var(--color-accent-hover)] transition-all shadow-sm disabled:opacity-50"
+            className="text-[13px] font-medium px-4 py-1.5 rounded-lg bg-[var(--color-accent)] text-white hover:bg-[var(--color-accent-hover)] transition-all shadow-sm disabled:opacity-50"
           >
             {busy ? 'Importing…' : 'Import now'}
           </button>

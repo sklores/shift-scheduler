@@ -127,7 +127,7 @@ export default function ShiftModal({ isOpen, onClose, editShiftId, prefillEmpId,
   }, [isOpen]);
 
   const hours = calcHours(startTime, endTime);
-  const inputCls = "w-full border border-[var(--color-border-strong)] rounded-md px-3 py-2 text-[13px] bg-white text-[var(--color-text)] focus:border-[var(--color-accent)] outline-none transition-colors";
+  const inputCls = "w-full border border-[var(--color-border-strong)] rounded-lg px-3 py-2 text-[13px] bg-white text-[var(--color-text)] focus:border-[var(--color-accent)] outline-none transition-colors";
   const labelCls = "block text-[10px] font-semibold uppercase tracking-wider text-[var(--color-muted)] mb-1.5 font-mono";
 
   return (
@@ -170,10 +170,10 @@ export default function ShiftModal({ isOpen, onClose, editShiftId, prefillEmpId,
             </button>
           )}
           <div className="flex gap-2.5 ml-auto">
-            <button onClick={onClose} className="text-[13px] font-medium px-4 py-2 rounded-lg bg-white text-[var(--color-text-2)] border border-[var(--color-border-strong)] hover:bg-[var(--color-bg)] transition-all">
+            <button onClick={onClose} className="text-[13px] font-medium px-4 py-2 rounded-lg bg-[var(--color-surface)] text-[var(--color-muted)] border border-[var(--color-border)] hover:bg-[var(--color-rowhover)] transition-all">
               Cancel
             </button>
-            <button onClick={handleSave} className="text-[13px] font-medium px-4 py-2 rounded-lg bg-[var(--color-accent)] text-white border border-[var(--color-accent)] hover:bg-[var(--color-accent-hover)] transition-all shadow-sm">
+            <button onClick={handleSave} className="text-[13px] font-medium px-4 py-2 rounded-lg bg-[var(--color-accent-dark)] text-white hover:bg-[var(--color-accent-hover)] transition-all shadow-sm">
               {editShiftId ? 'Save Changes' : 'Add Shift'}
             </button>
           </div>
@@ -222,7 +222,7 @@ export default function ShiftModal({ isOpen, onClose, editShiftId, prefillEmpId,
         </div>
 
         {hours > 0 && (
-          <div className="text-[12px] font-mono text-[var(--color-muted)] text-center py-1.5 bg-[var(--color-surface-2)] rounded-md">
+          <div className="text-[12px] font-mono text-[var(--color-muted)] text-center py-1.5 bg-[var(--color-surface-2)] rounded-lg">
             Shift length: <strong className="text-[var(--color-text)]">{hours} {hours === 1 ? 'hour' : 'hours'}</strong>
           </div>
         )}

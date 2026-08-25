@@ -174,7 +174,7 @@ export default function PublishModal({ isOpen, onClose, onToast }: PublishModalP
           </div>
         ) : (
           <>
-            <button onClick={handleClose} className="text-[13px] font-medium px-4 py-2 rounded-lg bg-white text-[var(--color-text-2)] border border-[var(--color-border-strong)] hover:bg-[var(--color-bg)] transition-all">
+            <button onClick={handleClose} className="text-[13px] font-medium px-4 py-2 rounded-lg bg-[var(--color-surface)] text-[var(--color-muted)] border border-[var(--color-border)] hover:bg-[var(--color-rowhover)] transition-all">
               Cancel
             </button>
             <button

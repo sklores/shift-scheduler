@@ -33,7 +33,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#2c3a35",
+  themeColor: "#ffffff",
 };
 
 export default function RootLayout({
@@ -43,7 +43,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={`${manrope.variable} h-full`}>
-      <body className="min-h-full flex flex-col font-sans bg-[#e4eded] text-[#2c3a35] antialiased">
+      <body className="min-h-full flex flex-col font-sans bg-[#e5eaef] text-[#1f2732] antialiased">
         {children}
       </body>
     </html>

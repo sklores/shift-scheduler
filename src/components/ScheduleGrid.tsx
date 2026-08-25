@@ -313,7 +313,7 @@ function DesktopGrid({ onAddShift, onEditShift, onDeleteShift, toastTips, tipsLo
                     key={cellKey}
                     ref={(el) => { if (el) cellRefs.current.set(refKey, el); else cellRefs.current.delete(refKey); }}
                     className={`group/cell border-r border-b border-[var(--color-border)] last:border-r-0 p-1.5 transition-colors overflow-hidden relative flex flex-col justify-center ${
-                      isAlt ? 'bg-[#f1f6f5]' : 'bg-[var(--color-surface)]'
+                      isAlt ? 'bg-[var(--color-surface-2)]' : 'bg-[var(--color-surface)]'
                     } ${isDragOver ? 'drag-over' : ''} ${isFocused ? 'kbd-focused' : ''}`}
                     onClick={(e) => {
                       const target = e.target as HTMLElement;
@@ -350,7 +350,7 @@ function DesktopGrid({ onAddShift, onEditShift, onDeleteShift, toastTips, tipsLo
                   >
                     {blocked && blockRecord ? (
                       <div className="group/block relative flex flex-col gap-1">
-                        <div className="w-full rounded-md bg-[var(--color-text)] text-white text-[10.5px] font-semibold text-center py-1.5 px-2 flex items-center justify-between gap-1 cursor-pointer select-none" title="Click × to remove">
+                        <div className="w-full rounded-lg bg-[var(--color-text)] text-white text-[10.5px] font-semibold text-center py-1.5 px-2 flex items-center justify-between gap-1 cursor-pointer select-none" title="Click × to remove">
                           <span className="flex-1 text-center uppercase tracking-wide">Unavailable</span>
                           <button
                             onClick={(e) => { e.stopPropagation(); removeAvailabilityBlock(blockRecord.id); }}
@@ -377,7 +377,7 @@ function DesktopGrid({ onAddShift, onEditShift, onDeleteShift, toastTips, tipsLo
                         {cellShifts.length === 0 && (
                           <button
                             data-add-btn
-                            className="block w-full border border-dashed border-[var(--color-border-strong)] text-[var(--color-muted)] rounded-md text-[12px] text-center py-1 mt-1 opacity-0 group-hover/cell:opacity-100 hover:border-[var(--color-accent)] hover:text-[var(--color-accent)] hover:bg-[var(--color-accent-subtle)] transition-all"
+                            className="block w-full border border-dashed border-[var(--color-border-strong)] text-[var(--color-muted)] rounded-lg text-[12px] text-center py-1 mt-1 opacity-0 group-hover/cell:opacity-100 hover:border-[var(--color-accent)] hover:text-[var(--color-accent)] hover:bg-[var(--color-accent-subtle)] transition-all"
                             onClick={(e) => { e.stopPropagation(); onAddShift(emp.id, cellDate); }}
                           >+</button>
                         )}
@@ -466,7 +466,7 @@ function MobileDayList({ onAddShift, onEditShift, onDeleteShift }: ScheduleGridP
               })}
               <button
                 onClick={() => onAddShift(null, getDateForCell(weekOffset, dayIdx))}
-                className="w-full border border-dashed border-[var(--color-border-strong)] rounded-md py-2.5 text-[12px] text-[var(--color-muted)] hover:border-[var(--color-accent)] hover:text-[var(--color-accent)] hover:bg-[var(--color-accent-subtle)] transition-all"
+                className="w-full border border-dashed border-[var(--color-border-strong)] rounded-lg py-2.5 text-[12px] text-[var(--color-muted)] hover:border-[var(--color-accent)] hover:text-[var(--color-accent)] hover:bg-[var(--color-accent-subtle)] transition-all"
               >
                 + Add shift
               </button>

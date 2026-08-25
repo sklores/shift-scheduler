@@ -105,7 +105,7 @@ export default function Toolbar({ onAddShift, onClearWeek, onSaveTemplate, onApp
           <>
         <button
           onClick={onAddShift}
-          className="text-[13px] font-medium px-3.5 py-2 rounded-lg bg-[var(--color-accent)] text-white border border-[var(--color-accent)] hover:bg-[var(--color-accent-hover)] transition-all flex-shrink-0 flex items-center gap-1.5 shadow-sm"
+          className="text-[13px] font-semibold px-3.5 py-2 rounded-lg bg-[var(--color-accent-dark)] text-white hover:bg-[var(--color-accent-hover)] transition-all flex-shrink-0 flex items-center gap-1.5"
         >
           <span className="text-base leading-none -mt-px">+</span> Add Shift
         </button>
@@ -124,7 +124,7 @@ export default function Toolbar({ onAddShift, onClearWeek, onSaveTemplate, onApp
           <button
             onClick={onCopyWeek}
             disabled={!canCopy}
-            className="text-[13px] font-medium px-3.5 py-2 rounded-lg bg-transparent text-[var(--color-text-2)] border border-[var(--color-border-strong)] hover:bg-[var(--color-bg)] hover:text-[var(--color-text)] transition-all flex-shrink-0 flex items-center gap-1.5 disabled:opacity-40 disabled:cursor-not-allowed"
+            className="text-[13px] font-medium px-3.5 py-2 rounded-lg bg-[var(--color-surface)] text-[var(--color-muted)] border border-[var(--color-border)] hover:bg-[var(--color-rowhover)] hover:text-[var(--color-text)] transition-all flex-shrink-0 flex items-center gap-1.5 disabled:opacity-40 disabled:cursor-not-allowed"
             title={canCopy ? `Copy ${currentWeekShifts.length} shifts — then paste into any week` : 'Nothing to copy — week is empty'}
           >
             <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><rect x="3" y="3" width="7" height="8" rx="1" stroke="currentColor" strokeWidth="1.4"/><path d="M5 3V2C5 1.45 5.45 1 6 1H10C10.55 1 11 1.45 11 2V6" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/></svg>
@@ -135,13 +135,13 @@ export default function Toolbar({ onAddShift, onClearWeek, onSaveTemplate, onApp
         {/* Secondary actions — same border style, slightly muted text */}
         <button
           onClick={onApplyTemplate}
-          className="text-[13px] font-medium px-3.5 py-2 rounded-lg bg-transparent text-[var(--color-text-2)] border border-[var(--color-border-strong)] hover:bg-[var(--color-bg)] hover:text-[var(--color-text)] transition-all flex-shrink-0"
+          className="text-[13px] font-medium px-3.5 py-2 rounded-lg bg-[var(--color-surface)] text-[var(--color-muted)] border border-[var(--color-border)] hover:bg-[var(--color-rowhover)] hover:text-[var(--color-text)] transition-all flex-shrink-0"
         >
           Apply Template
         </button>
         <button
           onClick={onSaveTemplate}
-          className="text-[13px] font-medium px-3.5 py-2 rounded-lg bg-transparent text-[var(--color-text-2)] border border-[var(--color-border-strong)] hover:bg-[var(--color-bg)] hover:text-[var(--color-text)] transition-all flex-shrink-0"
+          className="text-[13px] font-medium px-3.5 py-2 rounded-lg bg-[var(--color-surface)] text-[var(--color-muted)] border border-[var(--color-border)] hover:bg-[var(--color-rowhover)] hover:text-[var(--color-text)] transition-all flex-shrink-0"
         >
           Save Template
         </button>
@@ -217,13 +217,15 @@ export default function Toolbar({ onAddShift, onClearWeek, onSaveTemplate, onApp
   );
 }
 
-function Stat({ label, value, accent = false, fill = false }: { label: string; value: string; accent?: boolean; fill?: boolean }) {
+// Canon: totals are PLAIN TEXT — value text-sm font-extrabold ink,
+// label text-[11px] uppercase muted. No pill/card background.
+function Stat({ label, value, fill = false }: { label: string; value: string; accent?: boolean; fill?: boolean }) {
   return (
-    <div className={`px-3 py-1.5 rounded-lg bg-[var(--color-surface-2)] ${fill ? 'flex-1' : ''}`}>
-      <div className={`font-mono text-[16px] font-semibold leading-tight ${accent ? 'text-[var(--color-accent)]' : 'text-[var(--color-text)]'}`}>
+    <div className={`px-3 py-1.5 ${fill ? 'flex-1' : ''}`}>
+      <div className="font-mono text-sm font-extrabold leading-tight text-[var(--color-text)]">
         {value}
       </div>
-      <div className="text-[11px] text-[var(--color-muted)] mt-0.5">
+      <div className="text-[11px] font-bold uppercase tracking-wide text-[var(--color-muted)] mt-0.5">
         {label}
       </div>
     </div>
@@ -232,11 +234,11 @@ function Stat({ label, value, accent = false, fill = false }: { label: string; v
 
 function CostStat({ labor, fill = false }: { labor: number; fill?: boolean }) {
   return (
-    <div className={`px-3 py-1.5 rounded-lg bg-[var(--color-surface-2)] ${fill ? 'flex-1' : ''}`}>
-      <div className="font-mono text-[16px] font-semibold leading-tight text-[var(--color-text)]">
+    <div className={`px-3 py-1.5 ${fill ? 'flex-1' : ''}`}>
+      <div className="font-mono text-sm font-extrabold leading-tight text-[var(--color-text)]">
         {formatCurrency(labor)}
       </div>
-      <div className="text-[11px] text-[var(--color-muted)] mt-0.5 whitespace-nowrap">
+      <div className="text-[11px] font-bold uppercase tracking-wide text-[var(--color-muted)] mt-0.5 whitespace-nowrap">
         Payroll
       </div>
     </div>

@@ -81,7 +81,7 @@ export default function StaffDrawer({ isOpen, onClose, onToast, onConfirm }: Sta
           <h2 className="text-[15px] font-semibold">Staff Management</h2>
           <button
             onClick={onClose}
-            className="text-white/60 hover:text-white w-8 h-8 rounded-md hover:bg-white/10 flex items-center justify-center text-xl leading-none"
+            className="text-white/60 hover:text-white w-8 h-8 rounded-lg hover:bg-white/10 flex items-center justify-center text-xl leading-none"
             aria-label="Close"
           >
             &times;
@@ -98,7 +98,7 @@ export default function StaffDrawer({ isOpen, onClose, onToast, onConfirm }: Sta
                 <label className="block text-[10px] font-semibold uppercase tracking-wider text-[var(--color-muted)] mb-1 font-mono">Full Name</label>
                 <input
                   type="text"
-                  className="w-full border border-[var(--color-border-strong)] rounded-md px-3 py-2 text-[13px] bg-white text-[var(--color-text)] focus:border-[var(--color-accent)] outline-none transition-colors"
+                  className="w-full border border-[var(--color-border-strong)] rounded-lg px-3 py-2 text-[13px] bg-white text-[var(--color-text)] focus:border-[var(--color-accent)] outline-none transition-colors"
                   placeholder="Jane Smith"
                   value={newName}
                   onChange={(e) => setNewName(e.target.value)}
@@ -108,7 +108,7 @@ export default function StaffDrawer({ isOpen, onClose, onToast, onConfirm }: Sta
               <div>
                 <label className="block text-[10px] font-semibold uppercase tracking-wider text-[var(--color-muted)] mb-1 font-mono">Role</label>
                 <select
-                  className="w-full border border-[var(--color-border-strong)] rounded-md px-3 py-2 text-[13px] bg-white text-[var(--color-text)] focus:border-[var(--color-accent)] outline-none transition-colors"
+                  className="w-full border border-[var(--color-border-strong)] rounded-lg px-3 py-2 text-[13px] bg-white text-[var(--color-text)] focus:border-[var(--color-accent)] outline-none transition-colors"
                   value={newRole}
                   onChange={(e) => setNewRole(e.target.value as EmployeeRole)}
                 >
@@ -124,7 +124,7 @@ export default function StaffDrawer({ isOpen, onClose, onToast, onConfirm }: Sta
                 <label className="block text-[10px] font-semibold uppercase tracking-wider text-[var(--color-muted)] mb-1 font-mono">$/hr</label>
                 <input
                   type="number"
-                  className="w-full border border-[var(--color-border-strong)] rounded-md px-3 py-2 text-[13px] bg-white text-[var(--color-text)] focus:border-[var(--color-accent)] outline-none transition-colors"
+                  className="w-full border border-[var(--color-border-strong)] rounded-lg px-3 py-2 text-[13px] bg-white text-[var(--color-text)] focus:border-[var(--color-accent)] outline-none transition-colors"
                   placeholder="18"
                   value={newRate}
                   min={0}
@@ -138,7 +138,7 @@ export default function StaffDrawer({ isOpen, onClose, onToast, onConfirm }: Sta
                 <label className="block text-[10px] font-semibold uppercase tracking-wider text-[var(--color-muted)] mb-1 font-mono">Phone Number</label>
                 <input
                   type="tel"
-                  className="w-full border border-[var(--color-border-strong)] rounded-md px-3 py-2 text-[13px] bg-white text-[var(--color-text)] focus:border-[var(--color-accent)] outline-none transition-colors"
+                  className="w-full border border-[var(--color-border-strong)] rounded-lg px-3 py-2 text-[13px] bg-white text-[var(--color-text)] focus:border-[var(--color-accent)] outline-none transition-colors"
                   placeholder="+1 555 000 0000"
                   value={newPhone}
                   onChange={(e) => setNewPhone(e.target.value)}
@@ -148,7 +148,7 @@ export default function StaffDrawer({ isOpen, onClose, onToast, onConfirm }: Sta
                 <label className="block text-[10px] font-semibold uppercase tracking-wider text-[var(--color-muted)] mb-1 font-mono">Email</label>
                 <input
                   type="email"
-                  className="w-full border border-[var(--color-border-strong)] rounded-md px-3 py-2 text-[13px] bg-white text-[var(--color-text)] focus:border-[var(--color-accent)] outline-none transition-colors"
+                  className="w-full border border-[var(--color-border-strong)] rounded-lg px-3 py-2 text-[13px] bg-white text-[var(--color-text)] focus:border-[var(--color-accent)] outline-none transition-colors"
                   placeholder="employee@email.com"
                   value={newEmail}
                   onChange={(e) => setNewEmail(e.target.value)}
@@ -158,7 +158,7 @@ export default function StaffDrawer({ isOpen, onClose, onToast, onConfirm }: Sta
             <div className="flex justify-end">
               <button
                 onClick={handleAdd}
-                className="text-[13px] font-medium px-4 py-2 rounded-lg bg-[var(--color-accent)] text-white border border-[var(--color-accent)] hover:bg-[var(--color-accent-hover)] transition-all flex-shrink-0"
+                className="text-[13px] font-medium px-4 py-2 rounded-lg bg-[var(--color-accent-dark)] text-white hover:bg-[var(--color-accent-hover)] transition-all flex-shrink-0"
               >
                 Add
               </button>

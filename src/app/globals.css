@@ -6,40 +6,44 @@
   --font-sans: var(--font-sans), "Manrope", ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-sans), "Manrope", ui-sans-serif, system-ui, sans-serif;
 
-  /* Core palette — & done desktop: pale desaturated teal-gray, white cards */
-  --color-bg: #e4eded;
-  --color-surface: #ffffff;
-  --color-surface-2: #eef3f3;
-  --color-border: #d1dcdb;
-  --color-border-strong: #b9c8c6;
+  /* Core palette — Restaurant & Done manager canon (exact) */
+  --color-bg: #e5eaef;              /* page behind cards (--color-background) */
+  --color-surface: #ffffff;         /* cards, headers, inputs */
+  --color-surface-2: #edf1f5;       /* row + button hover (--color-rowhover) */
+  --color-rowhover: #edf1f5;
+  --color-track: #dbe2e9;           /* inert fills, skeletons */
+  --color-border: #ccd5de;          /* all 1px borders */
+  --color-border-strong: #b9c3cd;   /* input emphasis (app-only) */
 
-  /* Text — near-black forest green */
-  --color-text: #2c3a35;
-  --color-text-2: #56655f;
-  --color-muted: #8a9c9c;
+  /* Text */
+  --color-text: #1f2732;            /* primary text (--color-ink) */
+  --color-text-2: #5e6a76;          /* secondary (--color-muted) */
+  --color-muted: #5e6a76;           /* labels/secondary (canon muted) */
+  --color-faint: #939ca8;           /* tertiary / placeholder */
 
-  /* Primary action = ink (forest green); also recolors the header bar.
-     Teal is the SPARSE accent, exposed separately as --color-teal. */
-  --color-accent: #2c3a35;
-  --color-accent-hover: #1f2a26;
-  --color-accent-light: #e7efeb;
-  --color-accent-subtle: #eef4f1;
+  /* Accent split matters: accent = "this is SELECTED" (active tab, on-toggle),
+     accent-dark = "this is a BUTTON you press". Never use accent as a button fill. */
+  --color-accent: #35597f;          /* selected state only */
+  --color-accent-dark: #26425f;     /* button fill */
+  --color-accent-hover: #1f3650;    /* button hover (darker than accent-dark) */
+  --color-accent-light: #e4ebf3;
+  --color-accent-subtle: #eef2f8;
 
-  /* Brand teal — sparse highlights / pills only */
+  /* Brand teal — the ampersand mark only */
   --color-teal: #7bbfaa;
   --color-teal-subtle: #e8f3ef;
 
-  /* Success / publish + positive deltas */
-  --color-green: #2f8f6a;
-  --color-green-hover: #277a59;
-  --color-green-light: #e6f2ec;
+  /* Positive / publish (semantic — NOT the brand accent) */
+  --color-green: #2e7d55;
+  --color-green-hover: #256a48;
+  --color-green-light: #e4f0ea;
 
-  /* Negative deltas */
+  /* Negative (semantic) */
   --color-negative: #b54546;
 
-  /* Warning — amber, the one borrowed color */
-  --color-warn: #a86615;
-  --color-warn-light: #fdf2e0;
+  /* Amber (semantic warn) */
+  --color-warn: #b07c24;
+  --color-warn-light: #f6ecd9;
 
   /* Role accents — more cohesive, slightly muted */
   --color-role-manager: #2a4f72;
@@ -86,12 +90,12 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #c2d0ce;
+  background: #c2ccd6;
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #a6b8b5;
+  background: #a6b2bd;
 }
 
 /* Animations */

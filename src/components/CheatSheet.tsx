@@ -71,7 +71,7 @@ export default function CheatSheet({ isOpen, onClose }: CheatSheetProps) {
           <h2 className="text-[15px] font-semibold">Keyboard Shortcuts</h2>
           <button
             onClick={onClose}
-            className="text-white/60 hover:text-white w-8 h-8 rounded-md hover:bg-white/10 flex items-center justify-center text-xl leading-none"
+            className="text-white/60 hover:text-white w-8 h-8 rounded-lg hover:bg-white/10 flex items-center justify-center text-xl leading-none"
             aria-label="Close"
           >
             &times;
